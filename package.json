@@ -1,0 +1,33 @@
+{
+  "name": "t-rex-id-qorechain",
+  "version": "1.0.0",
+  "license": "MIT",
+  "private": false,
+  "description": "T-REX ID: Quantum-Safe ERC-3643 Institutional RWA Identity, Compliance & Sovereign Bond Integration on QoreChain Diana Testnet (Chain ID: 9800)",
+  "type": "module",
+  "scripts": {
+    "verify:live": "node scripts/verifyLiveState.mjs",
+    "verify:compliance": "node scripts/testComplianceIntegration.mjs",
+    "start:proxy": "tsx server/qorechainProxy.ts"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1",
+    "@qorechain/qoresign": "^0.1.1",
+    "@qorechain/sdk": "^0.12.0",
+    "@qorechain/wallet-adapter": "^0.4.0",
+    "dotenv": "^17.4.2",
+    "ethers": "^6.17.0",
+    "express": "^4.21.2",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
