@@ -3,6 +3,11 @@ import {
   Package, Cpu, ShieldCheck, Terminal, ExternalLink, Copy, Check, 
   Layers, ArrowUpRight, Zap, Code, Shield, Network, FileCode, CheckCircle2
 } from 'lucide-react';
+import {
+  QORECHAIN_RDK_ROLLUP_PRESET,
+  QORECHAIN_SOVEREIGN_ROLES,
+  buildQoreSealStatus
+} from '../services/qorechainPqcService';
 
 interface KitItem {
   id: string;
@@ -62,7 +67,7 @@ const QORECHAIN_KITS: KitItem[] = [
     category: 'Institutional Compliance',
     description: 'Institutional-grade regulated asset issuance and identity registry suite. Standardized under ERC-3643 / ONCHAINID for Swiss DLT & FINMA compliance.',
     officialPackage: '@qorechain/asset-kit',
-    cliCommand: 'npm run verify:compliance',
+    cliCommand: 'node scripts/deployLiveContracts.mjs',
     features: [
       '5 canonical contracts live on Diana Testnet (Chain ID: 9800)',
       'Swiss Quantum Bond (CH-QOR-01, 6 decimals) live in issuance',
@@ -74,18 +79,36 @@ const QORECHAIN_KITS: KitItem[] = [
     status: 'ACTIVE'
   },
   {
+    id: 'qoreseal',
+    name: 'QoreSeal Selective Disclosure (ML-KEM-1024)',
+    badge: '@qorechain/qoreseal',
+    category: 'Regulator & Auditor Privacy',
+    description: 'Post-quantum NIST FIPS 203 ML-KEM-1024 key encapsulation module enabling selective zero-PII disclosure of accredited investor claims and settlement proofs to FINMA/SEC auditors.',
+    officialPackage: '@qorechain/qoreseal',
+    cliCommand: 'npm i @qorechain/qoreseal',
+    features: [
+      'NIST FIPS 203 ML-KEM-1024 hybrid key encapsulation + AES-256-GCM',
+      'Selective disclosure reader for Topics 100, 101, 103 & 105',
+      'Deterministic regulator key escrow (FINMA-QORE-KEM1024-01)',
+      'Zero-PII audit trail compatibility with ERC-3643 ONCHAINID v3'
+    ],
+    docUrl: 'https://docs.qorechain.io',
+    repoUrl: 'https://build.qorechain.io/kits',
+    status: 'VERIFIED'
+  },
+  {
     id: 'rdk',
     name: 'Rollup Development Kit (RDK)',
     badge: '@qorechain/rdk',
-    category: 'App-Chain & Subnet Kit',
-    description: 'Protocol-native operator toolkit and framework for launching, configuring, and operating application-specific institutional rollups on QoreChain.',
+    category: 'Institutional Compliance Rollup',
+    description: 'Protocol-native operator toolkit preconfigured with the Institutional Compliance Rollup Preset (400ms block finality, native ERC-3643 transfer hook, and ONCHAINID v3 precompiles settling to Diana Chain 9800).',
     officialPackage: '@qorechain/rdk @qorechain/rdk-cli',
-    cliCommand: 'npm create qorechain-rollup@latest',
+    cliCommand: 'npx create-qorechain-rollup@latest --preset institutional-compliance --settlement diana-9800',
     features: [
-      'Institutional private subnets with quantum settlement',
-      'Operator CLI tooling (qorollup / @qorechain/rdk-cli)',
-      'Custom gas tokens & compliance rule injection',
-      'Settles directly to Diana Testnet / Mainnet'
+      'Institutional Compliance Rollup Preset (400ms block finality)',
+      'Enforced ERC-3643 ModularCompliance & ONCHAINID v3 ERC-7579/7930 precompiles',
+      'Celestia + QoreChain PQC DA Blobstream with @qorechain/qoreseal auditor hook',
+      'Settles directly to QoreChain Diana Testnet (Chain ID: 9800)'
     ],
     docUrl: 'https://docs.qorechain.io',
     repoUrl: 'https://build.qorechain.io/kits',
@@ -188,7 +211,7 @@ export const QoreChainKitsSection: React.FC = () => {
       </div>
 
       {/* Kit Selector Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 relative z-10">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 relative z-10">
         {QORECHAIN_KITS.map((kit) => {
           const isSelected = activeTab === kit.id;
           return (
@@ -299,6 +322,33 @@ export const QoreChainKitsSection: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Institutional Compliance Preset Strip: @qorechain/qoreseal & @qorechain/rdk */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+        {(() => {
+          const seal = buildQoreSealStatus(QORECHAIN_SOVEREIGN_ROLES.masterSovereignNode);
+          return (
+            <div className="p-4 rounded-xl bg-black/50 border border-purple-500/30 space-y-2 text-xs font-mono">
+              <div className="flex items-center justify-between">
+                <span className="text-purple-300 font-bold">{seal.package} · Selective Disclosure</span>
+                <span className="text-emerald-400 font-bold">{seal.status}</span>
+              </div>
+              <div className="text-slate-300">{seal.kemAlgorithm} · {seal.symmetricCipher}</div>
+              <div className="text-[11px] text-slate-400">
+                Regulator Key ID: {seal.regulatorKeyId} · Topics [{seal.authorizedTopics.join(', ')}]
+              </div>
+            </div>
+          );
+        })()}
+        <div className="p-4 rounded-xl bg-black/50 border border-cyan-500/30 space-y-2 text-xs font-mono">
+          <div className="flex items-center justify-between">
+            <span className="text-cyan-300 font-bold">{QORECHAIN_RDK_ROLLUP_PRESET.package} · {QORECHAIN_RDK_ROLLUP_PRESET.presetName}</span>
+            <span className="text-cyan-400 font-bold">{QORECHAIN_RDK_ROLLUP_PRESET.blockTimeMs}ms finality</span>
+          </div>
+          <div className="text-slate-300">{QORECHAIN_RDK_ROLLUP_PRESET.settlementLayer}</div>
+          <div className="text-[11px] text-emerald-300 truncate">{QORECHAIN_RDK_ROLLUP_PRESET.scaffoldCommand}</div>
         </div>
       </div>
     </div>
