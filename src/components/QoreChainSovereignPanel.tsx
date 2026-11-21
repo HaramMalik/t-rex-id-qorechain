@@ -19,6 +19,7 @@ import {
 import {
   QORECHAIN_CHAIN_ID,
   QORECHAIN_CONTRACTS,
+  QORECHAIN_PRECOMPILES,
   QORECHAIN_SOVEREIGN_ROLES,
   QORECHAIN_TX_OVERRIDES,
   SWISS_BOND_TOKEN_ABI,
@@ -28,7 +29,11 @@ import {
   getQoreChainProvider,
   getQoreChainTxUrl,
   getQoreChainAddressUrl,
-  buildQoreSealStatus
+  buildQoreSealStatus,
+  queryQorePqcKeyStatus,
+  queryQoreConsensusParams,
+  runAssetKitCompliancePreFlight,
+  type LivePqcPrecompileKeyStatus
 } from '../services/qorechainPqcService';
 
 interface QoreChainSovereignPanelProps {
@@ -65,6 +70,14 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
   const [isConnectedAgent, setIsConnectedAgent] = useState<boolean>(false);
   const [trustedIssuers, setTrustedIssuers] = useState<TrustedIssuerRecord[]>([]);
   const [isLoadingChain, setIsLoadingChain] = useState<boolean>(false);
+  const [targetPqcStatus, setTargetPqcStatus] = useState<LivePqcPrecompileKeyStatus | null>(null);
+  const [consensusParams, setConsensusParams] = useState<{
+    responded: boolean;
+    blockTimeMs: number;
+    baseGasPriceGwei: string;
+    validatorSetSize: number;
+    epoch: number;
+  } | null>(null);
 
   // Governance form controls
   const [freezeTargetInput, setFreezeTargetInput] = useState<string>(effectiveTarget);
@@ -102,14 +115,16 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
         ? ethers.getAddress(freezeTargetInput)
         : effectiveTarget;
 
-      const [pausedRes, ownerRes, supplyRes, balRes, frozenRes, issuerListRes] =
+      const [pausedRes, ownerRes, supplyRes, balRes, frozenRes, issuerListRes, pqcKeyRes, consensusRes] =
         await Promise.all([
           token.paused().catch(() => false),
           token.owner().catch(() => QORECHAIN_SOVEREIGN_ROLES.sovereignOwner),
           token.totalSupply().catch(() => 0n),
           token.balanceOf(queryAddr).catch(() => 0n),
           token.frozenAddresses(queryAddr).catch(() => false),
-          issuersReg.getTrustedIssuers().catch(() => [])
+          issuersReg.getTrustedIssuers().catch(() => []),
+          queryQorePqcKeyStatus(queryAddr),
+          queryQoreConsensusParams()
         ]);
 
       setIsPaused(Boolean(pausedRes));
@@ -117,6 +132,8 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
       setTotalSupply(ethers.formatUnits(supplyRes, 6));
       setTargetBalance(ethers.formatUnits(balRes, 6));
       setIsTargetFrozen(Boolean(frozenRes));
+      setTargetPqcStatus(pqcKeyRes);
+      setConsensusParams(consensusRes);
 
       if (connectedAddress && ethers.isAddress(connectedAddress)) {
         const agentStatus = await token.isAgent(connectedAddress).catch(() => false);
@@ -507,7 +524,7 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
         )}
       </div>
 
-      {/* Bottom 2-Column Spec Panels: @qorechain/qoreseal & @qorechain/rdk */}
+      {/* Bottom 2-Column Spec Panels: @qorechain/qoreseal + 0x0A02 & @qorechain/rdk + @qorechain/asset-kit */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* @qorechain/qoreseal ML-KEM-1024 Selective Disclosure */}
         <div className="rounded-xl border border-purple-500/30 bg-[#080B10] p-5 space-y-3">
@@ -527,38 +544,80 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
               <div className="text-[11px] text-slate-400">Regulator Key ID</div>
               <div className="text-purple-300 font-bold mt-0.5">{qoreSeal.regulatorKeyId}</div>
             </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-white/10 tabular-nums">
+              <div className="text-[11px] text-slate-400">ML-KEM Pubkey / Sealed Envelope</div>
+              <div className="text-cyan-300 font-bold mt-0.5">
+                {qoreSeal.mlkemPubkeyBytes.toLocaleString()} B / {qoreSeal.sealedEnvelopeBytes.toLocaleString()} B
+              </div>
+            </div>
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-white/10">
+              <div className="text-[11px] text-slate-400">0x0A02 Target PQC Key</div>
+              <div className={`font-bold mt-0.5 ${targetPqcStatus?.possessionProven ? 'text-emerald-400' : 'text-amber-300'}`}>
+                {targetPqcStatus === null
+                  ? 'Checking...'
+                  : targetPqcStatus.possessionProven
+                  ? `${targetPqcStatus.algorithmLabel} (${targetPqcStatus.pubkeyBytes} B)`
+                  : targetPqcStatus.registered
+                  ? `${targetPqcStatus.algorithmLabel} (Unproven)`
+                  : 'Unregistered'}
+              </div>
+            </div>
           </div>
           <div className="p-2.5 rounded-lg bg-black/60 border border-white/10 text-[11px] font-mono space-y-1">
-            <div className="text-slate-400">Authorized Selective Disclosure Topics: [{qoreSeal.authorizedTopics.join(', ')}]</div>
+            <div className="text-slate-400">
+              HKDF: {qoreSeal.hkdfContext} · Topics [{qoreSeal.authorizedTopics.join(', ')}]
+            </div>
             <div className="text-purple-200 break-all">KEM Digest: {qoreSeal.encapsulatedKeyDigest}</div>
           </div>
         </div>
 
-        {/* @qorechain/rdk Institutional Compliance Rollup Preset */}
+        {/* @qorechain/rdk + @qorechain/asset-kit + 0x0C01 Consensus Params */}
         <div className="rounded-xl border border-cyan-500/30 bg-[#080B10] p-5 space-y-3">
-          <div className="flex items-center justify-between border-b border-cyan-900/40 pb-3">
-            <span className="text-xs font-mono font-bold text-cyan-300 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-cyan-400" />
-              <span>{QORECHAIN_RDK_ROLLUP_PRESET.package} · {QORECHAIN_RDK_ROLLUP_PRESET.presetName}</span>
-            </span>
-            <span className="text-[11px] font-mono text-cyan-400">{QORECHAIN_RDK_ROLLUP_PRESET.blockTimeMs}ms finality</span>
-          </div>
-          <div className="space-y-1.5 text-xs font-mono">
-            <div className="text-slate-300">Settlement: {QORECHAIN_RDK_ROLLUP_PRESET.settlementLayer}</div>
-            <div className="text-slate-400">Data Availability: {QORECHAIN_RDK_ROLLUP_PRESET.daAvailability}</div>
-            <div className="space-y-1 pt-1">
-              {QORECHAIN_RDK_ROLLUP_PRESET.enforcedPrecompiles.map((rule) => (
-                <div key={rule} className="text-[11px] text-emerald-300 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                  <span>{rule}</span>
+          {(() => {
+            const preFlight = runAssetKitCompliancePreFlight(
+              effectiveTarget,
+              'CH-QOR-01',
+              targetPqcStatus?.responded
+                ? { registered: targetPqcStatus.registered, possessionProven: targetPqcStatus.possessionProven }
+                : undefined
+            );
+            return (
+              <>
+                <div className="flex items-center justify-between border-b border-cyan-900/40 pb-3">
+                  <span className="text-xs font-mono font-bold text-cyan-300 flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-cyan-400" />
+                    <span>{QORECHAIN_RDK_ROLLUP_PRESET.package} · {QORECHAIN_RDK_ROLLUP_PRESET.presetName}</span>
+                  </span>
+                  <span className="text-[11px] font-mono text-cyan-400 tabular-nums">
+                    {consensusParams?.responded
+                      ? `0x0C01: ${consensusParams.validatorSetSize} validators · Epoch ${consensusParams.epoch}`
+                      : `${QORECHAIN_RDK_ROLLUP_PRESET.blockTimeMs}ms finality`}
+                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="p-2.5 rounded-lg bg-black border border-white/10 text-[11px] font-mono text-cyan-300 flex items-center gap-2 overflow-x-auto">
-            <Terminal className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-            <code className="whitespace-nowrap">{QORECHAIN_RDK_ROLLUP_PRESET.scaffoldCommand}</code>
-          </div>
+                <div className="space-y-1.5 text-xs font-mono">
+                  <div className="text-slate-300 flex flex-wrap items-center justify-between gap-2">
+                    <span>{preFlight.package}: {preFlight.bech32Holder.slice(0, 14)}...{preFlight.bech32Holder.slice(-6)}</span>
+                    <span className="text-emerald-400 font-bold">
+                      {preFlight.pqcKeyBoundInMockChain ? 'PRE-FLIGHT BOUND' : 'UNBOUND'} · {QORECHAIN_PRECOMPILES.pqcVerify.slice(-6)}/{QORECHAIN_PRECOMPILES.pqcKeyStatus.slice(-6)}
+                    </span>
+                  </div>
+                  <div className="text-slate-400">Data Availability: {QORECHAIN_RDK_ROLLUP_PRESET.daAvailability}</div>
+                  <div className="space-y-1 pt-1">
+                    {QORECHAIN_RDK_ROLLUP_PRESET.enforcedPrecompiles.map((rule) => (
+                      <div key={rule} className="text-[11px] text-emerald-300 flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                        <span>{rule}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-black border border-white/10 text-[11px] font-mono text-cyan-300 flex items-center gap-2 overflow-x-auto">
+                  <Terminal className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                  <code className="whitespace-nowrap">{QORECHAIN_RDK_ROLLUP_PRESET.scaffoldCommand}</code>
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>

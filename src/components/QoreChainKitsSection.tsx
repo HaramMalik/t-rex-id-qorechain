@@ -63,16 +63,16 @@ const QORECHAIN_KITS: KitItem[] = [
   {
     id: 'asset-kit',
     name: 'Asset & Identity Kit (ERC-3643)',
-    badge: 'qorechain-asset-kit',
+    badge: '@qorechain/asset-kit',
     category: 'Institutional Compliance',
-    description: 'Institutional-grade regulated asset issuance and identity registry suite. Standardized under ERC-3643 / ONCHAINID for Swiss DLT & FINMA compliance.',
+    description: 'Institutional-grade regulated asset issuance and identity registry suite. Validates PQC holder key bindings against TrexPqcIdentityModule and MockChain pre-flight checks.',
     officialPackage: '@qorechain/asset-kit',
-    cliCommand: 'node scripts/deployLiveContracts.mjs',
+    cliCommand: 'npx hardhat test test/TrexPqcIdentityModule.test.ts',
     features: [
-      '5 canonical contracts live on Diana Testnet (Chain ID: 9800)',
-      'Swiss Quantum Bond (CH-QOR-01, 6 decimals) live in issuance',
+      '5 canonical ERC-3643 contracts live on Diana Testnet (Chain ID: 9800)',
+      'TrexPqcIdentityModule gates transfers on 0x0A02 pqcKeyStatus + 0x0A01 pqcVerify',
       'Claim Topics 100, 101, 103, 105 active on TrustedIssuersRegistry',
-      'Sovereign Owner & Master Node cryptographic governance'
+      'AssetKit MockChain pre-flight validation integrated in PQC service'
     ],
     docUrl: 'https://docs.qorechain.io',
     repoUrl: 'https://build.qorechain.io/kits',
@@ -83,14 +83,32 @@ const QORECHAIN_KITS: KitItem[] = [
     name: 'QoreSeal Selective Disclosure (ML-KEM-1024)',
     badge: '@qorechain/qoreseal',
     category: 'Regulator & Auditor Privacy',
-    description: 'Post-quantum NIST FIPS 203 ML-KEM-1024 key encapsulation module enabling selective zero-PII disclosure of accredited investor claims and settlement proofs to FINMA/SEC auditors.',
+    description: 'Post-quantum NIST FIPS 203 ML-KEM-1024 key encapsulation module generating real binary selective disclosure envelopes with HKDF-SHA-256 and AES-256-GCM.',
     officialPackage: '@qorechain/qoreseal',
     cliCommand: 'npm i @qorechain/qoreseal',
     features: [
-      'NIST FIPS 203 ML-KEM-1024 hybrid key encapsulation + AES-256-GCM',
+      'NIST FIPS 203 ML-KEM-1024 (1,568-byte public key) + AES-256-GCM',
+      'HKDF-SHA-256 domain-separated context (onchainid-v3-purpose-4)',
       'Selective disclosure reader for Topics 100, 101, 103 & 105',
-      'Deterministic regulator key escrow (FINMA-QORE-KEM1024-01)',
       'Zero-PII audit trail compatibility with ERC-3643 ONCHAINID v3'
+    ],
+    docUrl: 'https://docs.qorechain.io',
+    repoUrl: 'https://build.qorechain.io/kits',
+    status: 'VERIFIED'
+  },
+  {
+    id: 'qorescan',
+    name: 'QoreScan CBOM & FINMA PQC Inventory',
+    badge: '@qorechain/qorescan',
+    category: 'Cryptographic Inventory & Compliance',
+    description: 'Generates CycloneDX 1.6 Cryptographic Bills of Materials (cbom.json) and FINMA Guidance 05/2026 readiness reports across Diana chain state, TLS X25519MLKEM768, and Solidity.',
+    officialPackage: '@qorechain/qorescan',
+    cliCommand: 'npx qorescan scan --network testnet --address qor18sp9j6zplpun44zu4ryqdzpq6cs2wc7mrtt9ad --tls evm-testnet.qore.host:443 --solidity ./contracts',
+    features: [
+      'CycloneDX 1.6 CBOM (13 algorithms inventoried across chain, TLS & Solidity)',
+      'FINMA Guidance 05/2026 markdown report (FINMA_PQC_REPORT.md)',
+      'Detects ML-DSA-87 precompile calls in TrexPqcIdentityModule.sol',
+      'Verifies TLS 1.3 X25519MLKEM768 post-quantum RPC transport'
     ],
     docUrl: 'https://docs.qorechain.io',
     repoUrl: 'https://build.qorechain.io/kits',
@@ -336,8 +354,8 @@ export const QoreChainKitsSection: React.FC = () => {
                 <span className="text-emerald-400 font-bold">{seal.status}</span>
               </div>
               <div className="text-slate-300">{seal.kemAlgorithm} · {seal.symmetricCipher}</div>
-              <div className="text-[11px] text-slate-400">
-                Regulator Key ID: {seal.regulatorKeyId} · Topics [{seal.authorizedTopics.join(', ')}]
+              <div className="text-[11px] text-slate-400 tabular-nums">
+                Pubkey {seal.mlkemPubkeyBytes} B · Envelope {seal.sealedEnvelopeBytes} B · {seal.hkdfContext}
               </div>
             </div>
           );

@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { Key, ShieldCheck, Globe, Copy, Check, Layers, Fingerprint } from 'lucide-react';
+import { Key, ShieldCheck, Globe, Copy, Check, Layers, Fingerprint, RefreshCw, Cpu } from 'lucide-react';
 import {
   ONCHAINID_V3_KEY_PURPOSES,
   ONCHAINID_V3_IDENTITY_TYPES,
@@ -8,7 +8,11 @@ import {
 } from '../constants/claimSchemas';
 import {
   buildErc7930InteroperableEnvelope,
-  QORECHAIN_CHAIN_ID
+  buildQoreSealStatus,
+  queryQorePqcKeyStatus,
+  QORECHAIN_PRECOMPILES,
+  QORECHAIN_CHAIN_ID,
+  type LivePqcPrecompileKeyStatus
 } from '../services/qorechainPqcService';
 
 interface OnchainIdV3EnvelopePanelProps {
@@ -22,6 +26,8 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
 }) => {
   const [selectedIdentityType, setSelectedIdentityType] = useState<OnchainIdV3IdentityType>('INSTITUTION');
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [pqcKeyStatus, setPqcKeyStatus] = useState<LivePqcPrecompileKeyStatus | null>(null);
+  const [isLoadingPqc, setIsLoadingPqc] = useState<boolean>(false);
 
   const normalizedAddress = useMemo(() => {
     return ethers.isAddress(targetAddress)
@@ -32,6 +38,24 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
   const envelope = useMemo(() => {
     return buildErc7930InteroperableEnvelope(normalizedAddress, chainId, selectedIdentityType);
   }, [normalizedAddress, chainId, selectedIdentityType]);
+
+  const qoreSeal = useMemo(() => {
+    return buildQoreSealStatus(normalizedAddress, [100, 101, 103, 105]);
+  }, [normalizedAddress]);
+
+  const refreshPrecompileStatus = useCallback(async () => {
+    setIsLoadingPqc(true);
+    try {
+      const status = await queryQorePqcKeyStatus(normalizedAddress);
+      setPqcKeyStatus(status);
+    } finally {
+      setIsLoadingPqc(false);
+    }
+  }, [normalizedAddress]);
+
+  useEffect(() => {
+    refreshPrecompileStatus();
+  }, [refreshPrecompileStatus]);
 
   const activeTypeSpec = useMemo(() => {
     return (
@@ -187,6 +211,85 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
           <div className="pt-1 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
             <span className="text-slate-400">Unified Keyspace Digest:</span>
             <span className="text-purple-300 break-all">{envelope.unifiedKeyspaceDigest}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Live 0x0A02 / 0x0A01 Precompile Verification & @qorechain/qoreseal Envelope */}
+      <div className="rounded-2xl bg-slate-900/90 border border-white/10 p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
+            <Cpu className="w-4 h-4 text-cyan-400" />
+            <span>Live Diana Precompile & QoreSeal Attestation</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-mono text-slate-400">
+              {QORECHAIN_PRECOMPILES.pqcKeyStatus.slice(0, 10)}...{QORECHAIN_PRECOMPILES.pqcKeyStatus.slice(-4)} · {QORECHAIN_PRECOMPILES.pqcVerify.slice(-4)}
+            </span>
+            <button
+              type="button"
+              onClick={refreshPrecompileStatus}
+              disabled={isLoadingPqc}
+              className="px-3 py-1 rounded-lg bg-slate-950 border border-white/15 text-xs font-mono text-cyan-300 hover:text-white flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 ${isLoadingPqc ? 'animate-spin' : ''}`} />
+              <span>Probe 0x0A02</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+          <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 space-y-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-slate-400">0x0A02 pqcKeyStatus(address)</span>
+              <span className={pqcKeyStatus?.possessionProven ? 'text-emerald-400 font-bold' : 'text-amber-300 font-bold'}>
+                {pqcKeyStatus === null
+                  ? 'PROBING...'
+                  : pqcKeyStatus.possessionProven
+                  ? 'HYBRID POSSESSION PROVEN'
+                  : pqcKeyStatus.registered
+                  ? 'REGISTERED · UNPROVEN'
+                  : 'NO PQC KEY REGISTERED'}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 pt-1 tabular-nums">
+              <div>
+                <div className="text-[10px] text-slate-500">Algorithm</div>
+                <div className="text-slate-200 font-semibold">{pqcKeyStatus?.algorithmLabel || '—'}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500">Pubkey Size</div>
+                <div className="text-cyan-300 font-semibold">{pqcKeyStatus ? `${pqcKeyStatus.pubkeyBytes} B` : '—'}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500">0x0A01 Verify</div>
+                <div className="text-emerald-300 font-semibold">TrexPqcIdentityModule</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-black/50 border border-purple-500/25 space-y-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-purple-300 font-bold">{qoreSeal.package} · {qoreSeal.kemAlgorithm}</span>
+              <span className="text-emerald-400 font-bold">{qoreSeal.status}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 pt-1 tabular-nums">
+              <div>
+                <div className="text-[10px] text-slate-500">ML-KEM Pubkey</div>
+                <div className="text-white font-semibold">{qoreSeal.mlkemPubkeyBytes.toLocaleString()} B</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500">Sealed Envelope</div>
+                <div className="text-purple-300 font-semibold">{qoreSeal.sealedEnvelopeBytes.toLocaleString()} B</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500">HKDF Context</div>
+                <div className="text-slate-300 font-semibold truncate" title={qoreSeal.hkdfContext}>{qoreSeal.hkdfContext}</div>
+              </div>
+            </div>
+            <div className="text-[10px] text-slate-400 truncate">
+              KEM Digest: {qoreSeal.encapsulatedKeyDigest}
+            </div>
           </div>
         </div>
       </div>

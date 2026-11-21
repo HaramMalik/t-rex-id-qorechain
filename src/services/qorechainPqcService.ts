@@ -1,4 +1,12 @@
 import { ethers } from 'ethers';
+import {
+  seal as qoreSealEncrypt,
+  sealKeysFromSeed,
+  kdfInfo,
+  toHex as qoreSealToHex,
+  ML_KEM_1024_PUBLIC_KEY_LENGTH
+} from '@qorechain/qoreseal';
+import { MockChain as AssetKitMockChain } from '@qorechain/asset-kit';
 
 export const QORECHAIN_CHAIN_ID = 9800;
 export const QORECHAIN_CHAIN_HEX = '0x2648';
@@ -34,6 +42,27 @@ export const QORECHAIN_CONTRACTS = {
   TREXFactory: '0x110e9080FcB2DC0025262eD6eD213dc17dB6454E',
   SwissQuantumBondToken: '0x6A9ca1D10c054C5aE9f5F597c7662083110a9834'
 } as const;
+
+export const QORECHAIN_PRECOMPILES = {
+  crossVmBridge: '0x0000000000000000000000000000000000000901',
+  pqcVerify: '0x0000000000000000000000000000000000000A01',
+  pqcKeyStatus: '0x0000000000000000000000000000000000000A02',
+  rlConsensusParams: '0x0000000000000000000000000000000000000C01'
+} as const;
+
+export const TREX_PQC_IDENTITY_MODULE_ABI = [
+  'function PQC_VERIFY_PRECOMPILE() view returns (address)',
+  'function PQC_KEY_STATUS_PRECOMPILE() view returns (address)',
+  'function keyStatus(address account) view returns (bool responded, bool registered, uint8 algorithmId, bool possessionProven)',
+  'function verifyDirectPqcSignature(bytes pubkey, bytes signature, bytes message) view returns (bool)',
+  'function verifyOnchainIdClaimPqc(address issuer, uint256 topic, address subject, bytes claimData, bytes mlDsaSignature) view returns (bool)',
+  'function isHybridHolder(address account) view returns (bool)',
+  'function precompileActive() view returns (bool)',
+  'function anchorErc7930Envelope(address evmAccount, string cosmosBech32, bytes32 keyspaceDigest, uint8 identityRole, bytes mlDsaSignature)',
+  'function getErc7930Envelope(address evmAccount) view returns (tuple(string cosmosBech32, bytes32 keyspaceDigest, uint8 identityRole, uint64 anchoredAt, bool pqcVerified))',
+  'function moduleCheck(address from, address to, uint256 value, address compliance) view returns (bool)',
+  'function name() pure returns (string)'
+] as const;
 
 export const QORECHAIN_CONTRACT_BECH32 = {
   IdentityRegistryStorage: 'qor1za9efqy46mtdg6fvzxrew7hzd08tju7fsc8t79',
@@ -385,20 +414,40 @@ export interface QoreSealStatus {
   encapsulatedKeyDigest: string;
   authorizedTopics: number[];
   regulatorKeyId: string;
+  mlkemPubkeyBytes: number;
+  sealedEnvelopeBytes: number;
+  hkdfContext: string;
   status: 'SEALED_ML_KEM_1024';
 }
 
 export function buildQoreSealStatus(subjectAddr: string, topics: number[] = [100, 101, 103, 105]): QoreSealStatus {
   const clean = ethers.isAddress(subjectAddr) ? ethers.getAddress(subjectAddr) : QORECHAIN_SOVEREIGN_ROLES.MasterSovereignNode;
-  const digest = ethers.keccak256(ethers.toUtf8Bytes(`QORESEAL_ML_KEM_1024_${clean}_${topics.join(',')}`));
+  const seedHex = ethers.keccak256(ethers.toUtf8Bytes(`QORESEAL_ML_KEM_1024_${clean}_${topics.join(',')}`));
+  const seedBytes = ethers.getBytes(seedHex);
+  const sealKeys = sealKeysFromSeed(seedBytes);
+  const payload = new TextEncoder().encode(
+    JSON.stringify({ subject: clean, topics, standard: 'ERC-3643/ONCHAINID-v3', chainId: 'qorechain-diana' })
+  );
+  const envelope = qoreSealEncrypt({
+    plaintext: payload,
+    recipients: [{ mlkemPublicKey: sealKeys.mlkemPublicKey }],
+    chainId: 'qorechain-diana',
+    purpose: 'onchainid-v3-purpose-4',
+    mode: 'mlkem'
+  });
+  const digest = ethers.keccak256(envelope);
+
   return {
     package: '@qorechain/qoreseal',
     kemAlgorithm: 'ML-KEM-1024 (NIST FIPS 203)',
-    symmetricCipher: 'AES-256-GCM + SHAKE-256 HKDF',
+    symmetricCipher: 'AES-256-GCM + HKDF-SHA-256',
     disclosureMode: 'SELECTIVE_AUDITOR_ONLY',
     encapsulatedKeyDigest: digest,
     authorizedTopics: topics,
-    regulatorKeyId: 'FINMA-QORE-KEM1024-01',
+    regulatorKeyId: `FINMA-QORE-KEM1024-${qoreSealToHex(sealKeys.mlkemPublicKey.slice(0, 4)).toUpperCase()}`,
+    mlkemPubkeyBytes: ML_KEM_1024_PUBLIC_KEY_LENGTH,
+    sealedEnvelopeBytes: envelope.length,
+    hkdfContext: kdfInfo('qorechain-diana', 'onchainid-v3-purpose-4'),
     status: 'SEALED_ML_KEM_1024'
   };
 }
@@ -712,4 +761,133 @@ export async function fetchLiveQoreTelemetry(): Promise<LiveQoreChainTelemetry> 
       evmWindowState: fallbackEvmWindow
     };
   }
+}
+
+export interface LivePqcPrecompileKeyStatus {
+  account: string;
+  responded: boolean;
+  registered: boolean;
+  algorithmId: number;
+  algorithmLabel: string;
+  possessionProven: boolean;
+  pubkeyBytes: number;
+  precompileAddress: string;
+}
+
+export async function queryQorePqcKeyStatus(account: string): Promise<LivePqcPrecompileKeyStatus> {
+  const clean = ethers.isAddress(account) ? ethers.getAddress(account) : QORECHAIN_SOVEREIGN_ROLES.gasBroadcaster;
+  try {
+    const provider = getQoreChainProvider();
+    const iface = new ethers.Interface([
+      'function pqcKeyStatus(address account) view returns (bool registered, uint8 algorithmId, bytes pubkey, bool possessionProven)'
+    ]);
+    const callData = iface.encodeFunctionData('pqcKeyStatus', [clean]);
+    const raw = await provider.call({ to: QORECHAIN_PRECOMPILES.pqcKeyStatus, data: callData });
+    if (!raw || raw === '0x') {
+      return {
+        account: clean,
+        responded: false,
+        registered: false,
+        algorithmId: 0,
+        algorithmLabel: 'NONE',
+        possessionProven: false,
+        pubkeyBytes: 0,
+        precompileAddress: QORECHAIN_PRECOMPILES.pqcKeyStatus
+      };
+    }
+    const decoded = iface.decodeFunctionResult('pqcKeyStatus', raw);
+    const algId = Number(decoded.algorithmId);
+    return {
+      account: clean,
+      responded: true,
+      registered: Boolean(decoded.registered),
+      algorithmId: algId,
+      algorithmLabel: algId === 1 ? 'ML-DSA-87 (FIPS 204)' : `ALG_${algId}`,
+      possessionProven: Boolean(decoded.possessionProven),
+      pubkeyBytes: typeof decoded.pubkey === 'string' ? (decoded.pubkey.length - 2) / 2 : 0,
+      precompileAddress: QORECHAIN_PRECOMPILES.pqcKeyStatus
+    };
+  } catch {
+    return {
+      account: clean,
+      responded: false,
+      registered: false,
+      algorithmId: 0,
+      algorithmLabel: 'UNAVAILABLE',
+      possessionProven: false,
+      pubkeyBytes: 0,
+      precompileAddress: QORECHAIN_PRECOMPILES.pqcKeyStatus
+    };
+  }
+}
+
+export async function verifyQorePqcSignatureOnChain(
+  pubkeyHex: string,
+  signatureHex: string,
+  messageHex: string
+): Promise<{ responded: boolean; valid: boolean; precompileAddress: string }> {
+  try {
+    const provider = getQoreChainProvider();
+    const iface = new ethers.Interface([
+      'function pqcVerify(bytes pubkey, bytes signature, bytes message) view returns (bool valid)'
+    ]);
+    const data = iface.encodeFunctionData('pqcVerify', [pubkeyHex, signatureHex, messageHex]);
+    const raw = await provider.call({ to: QORECHAIN_PRECOMPILES.pqcVerify, data });
+    if (!raw || raw === '0x') {
+      return { responded: false, valid: false, precompileAddress: QORECHAIN_PRECOMPILES.pqcVerify };
+    }
+    const [valid] = iface.decodeFunctionResult('pqcVerify', raw);
+    return { responded: true, valid: Boolean(valid), precompileAddress: QORECHAIN_PRECOMPILES.pqcVerify };
+  } catch {
+    return { responded: false, valid: false, precompileAddress: QORECHAIN_PRECOMPILES.pqcVerify };
+  }
+}
+
+export async function queryQoreConsensusParams(): Promise<{
+  responded: boolean;
+  blockTimeMs: number;
+  baseGasPriceGwei: string;
+  validatorSetSize: number;
+  epoch: number;
+}> {
+  try {
+    const provider = getQoreChainProvider();
+    const iface = new ethers.Interface([
+      'function rlConsensusParams() view returns (uint256 blockTime, uint256 baseGasPrice, uint256 validatorSetSize, uint256 epoch)'
+    ]);
+    const raw = await provider.call({
+      to: QORECHAIN_PRECOMPILES.rlConsensusParams,
+      data: iface.encodeFunctionData('rlConsensusParams', [])
+    });
+    const decoded = iface.decodeFunctionResult('rlConsensusParams', raw);
+    return {
+      responded: true,
+      blockTimeMs: Number(decoded.blockTime),
+      baseGasPriceGwei: Number(decoded.baseGasPrice).toString(),
+      validatorSetSize: Number(decoded.validatorSetSize),
+      epoch: Number(decoded.epoch)
+    };
+  } catch {
+    return { responded: false, blockTimeMs: 5000, baseGasPriceGwei: '100', validatorSetSize: 4, epoch: 1 };
+  }
+}
+
+export function runAssetKitCompliancePreFlight(
+  investorAddress: string,
+  assetId: string = 'CH-QOR-01',
+  liveKeyStatus?: { registered: boolean; possessionProven: boolean }
+) {
+  const chain = new AssetKitMockChain();
+  const qorAddr = evmAddressToQorBech32(investorAddress);
+  chain.setHybridKey(qorAddr, {
+    registered: liveKeyStatus ? liveKeyStatus.registered : true,
+    possessionProven: liveKeyStatus ? liveKeyStatus.possessionProven : true
+  });
+  return {
+    package: '@qorechain/asset-kit',
+    assetId,
+    bech32Holder: qorAddr,
+    pqcKeyBoundInMockChain: chain.hasHybridKey(qorAddr),
+    chainHeight: chain.height
+  };
 }
