@@ -76,3 +76,53 @@ contract MockTrexIdentityRegistry {
         return _verified[account];
     }
 }
+
+/// @title MockCrossVmBridgePrecompile
+/// @notice Test mock mimicking QoreChain's 0x0901 `executeCrossVMCall(uint8,string,bytes)` precompile.
+contract MockCrossVmBridgePrecompile {
+    uint8 public lastTargetVm;
+    string public lastTargetContract;
+    bytes public lastPayload;
+    uint256 public callCount;
+    bool public shouldRevert;
+    bytes public mockReply;
+
+    mapping(string => bool) public allowedTargets;
+    bool public enforceAllowlist;
+
+    error TargetNotAllowlisted(string target);
+    error MockBridgeFailure();
+
+    function setAllowlist(string calldata target, bool allowed) external {
+        allowedTargets[target] = allowed;
+    }
+
+    function setEnforceAllowlist(bool enforce) external {
+        enforceAllowlist = enforce;
+    }
+
+    function setShouldRevert(bool flag) external {
+        shouldRevert = flag;
+    }
+
+    function setMockReply(bytes calldata reply) external {
+        mockReply = reply;
+    }
+
+    function executeCrossVMCall(
+        uint8 targetVM,
+        string calldata targetContract,
+        bytes calldata payload
+    ) external returns (bytes memory) {
+        if (shouldRevert) revert MockBridgeFailure();
+        if (enforceAllowlist && !allowedTargets[targetContract]) {
+            revert TargetNotAllowlisted(targetContract);
+        }
+        lastTargetVm = targetVM;
+        lastTargetContract = targetContract;
+        lastPayload = payload;
+        callCount += 1;
+        return mockReply.length > 0 ? mockReply : bytes('{"receipt_id":1,"status":"ok"}');
+    }
+}
+

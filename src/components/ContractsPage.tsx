@@ -628,40 +628,75 @@ export const ContractsPage: React.FC = () => {
           )}
         </div>
 
-        {/* Post-Quantum Precompile Compliance Extension (TrexPqcIdentityModule) */}
+        {/* Post-Quantum & Cross-VM Precompile Extensions */}
         {activeNetwork === 'QORECHAIN' && (
-          <div className="p-5 sm:p-6 rounded-2xl bg-[#050813] border border-emerald-500/30 space-y-4">
+          <div className="p-5 sm:p-6 rounded-2xl bg-[#050813] border border-emerald-500/30 space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
               <div>
                 <div className="text-xs font-mono font-bold text-emerald-400">
-                  Gate-1 Post-Quantum ModularCompliance & ONCHAINID v3 Extension
+                  Additive QoreChain Diana Precompile Extensions (ERC-3643 · ONCHAINID v3 · Cross-VM)
                 </div>
                 <h2 className="text-lg font-display font-bold text-white mt-0.5">
-                  TrexPqcIdentityModule (ERC-3643 + 0x0A01 pqcVerify + 0x0A02 pqcKeyStatus)
+                  TrexPqcIdentityModule · PqcERC7913Verifier · TrexCrossVmBridgeModule
                 </h2>
               </div>
               <span className="text-xs font-mono text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded self-start sm:self-center">
-                Compiled · Hardhat Audited · Ready for Scoped EVM Window Deploy
+                Compiled · Hardhat Audited · npm run deploy:qorechain-all
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
-              Extends QoreChain&apos;s deployed <code className="text-cyan-300">ModularCompliance</code> without disturbing existing Sepolia or Diana contracts. Enforces fail-closed NIST FIPS 204 (<code className="text-emerald-300">ML-DSA-87</code>) proof-of-possession via native precompile <code className="text-cyan-300">0x0A02</code> on transfers, verifies ONCHAINID v3 ERC-735 issuer claims via <code className="text-cyan-300">0x0A01</code>, and anchors cross-VM <code className="text-cyan-300">ERC-7930</code> address envelopes.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 space-y-1.5">
+                <div className="flex items-center justify-between font-mono">
+                  <span className="text-white font-bold">TrexPqcIdentityModule</span>
+                  <span className="text-[10px] text-cyan-300">ERC-3643</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Plug-and-play <code className="text-cyan-300">ModularCompliance</code> extension enforcing fail-closed ML-DSA-87 proof-of-possession (<code className="text-emerald-300">0x0A02</code>), ERC-735 claim checks (<code className="text-emerald-300">0x0A01</code>), and ERC-7930 envelope anchoring.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/50 border border-cyan-500/25 space-y-1.5">
+                <div className="flex items-center justify-between font-mono">
+                  <span className="text-white font-bold">PqcERC7913Verifier</span>
+                  <span className="text-[10px] text-emerald-300">ONCHAINID v3</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Stateless <code className="text-cyan-300">IERC7913SignatureVerifier</code> returning <code className="text-emerald-300">0x024ad318</code> / <code className="text-slate-300">0xffffffff</code> via <code className="text-cyan-300">0x0A01</code> so OpenZeppelin <code className="text-cyan-300">AccountERC7579</code> smart accounts natively authenticate ML-DSA-87.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/50 border border-emerald-500/25 space-y-1.5">
+                <div className="flex items-center justify-between font-mono">
+                  <span className="text-white font-bold">TrexCrossVmBridgeModule</span>
+                  <span className="text-[10px] text-emerald-300">0x0901 Cross-VM</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Atomic EVM-to-Native Cosmos bridge invoking <code className="text-cyan-300">0x0901 executeCrossVMCall</code> to record sanitized ERC-7930 compliance receipts on <code className="text-emerald-300">qday-receipts-w3</code> (<code className="text-slate-300">qor1xjayq5...gltw8</code>).
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
               <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
-                <div className="text-[10px] text-slate-400">0x0A01 · pqcVerify(bytes,bytes,bytes)</div>
-                <div className="text-cyan-300 truncate">0x0000000000000000000000000000000000000A01</div>
-                <div className="text-[11px] text-emerald-400">Claim Signatures & ERC-7930 Anchoring</div>
+                <div className="text-[10px] text-slate-400">0x0A01 · pqcVerify</div>
+                <div className="text-cyan-300 truncate">0x0000...00000A01</div>
+                <div className="text-[11px] text-emerald-400">ERC-7913 & Claim Proofs</div>
               </div>
               <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
-                <div className="text-[10px] text-slate-400">0x0A02 · pqcKeyStatus(address)</div>
-                <div className="text-cyan-300 truncate">0x0000000000000000000000000000000000000A02</div>
-                <div className="text-[11px] text-emerald-400">ML-DSA-87 + possessionProven Gate</div>
+                <div className="text-[10px] text-slate-400">0x0A02 · pqcKeyStatus</div>
+                <div className="text-cyan-300 truncate">0x0000...00000A02</div>
+                <div className="text-[11px] text-emerald-400">ML-DSA-87 + PoP Gate</div>
+              </div>
+              <div className="p-3 rounded-xl bg-black/50 border border-emerald-500/20 space-y-1">
+                <div className="text-[10px] text-slate-400">0x0901 · executeCrossVMCall</div>
+                <div className="text-emerald-300 truncate">0x0000...00000901</div>
+                <div className="text-[11px] text-emerald-400">Atomic EVM → Native Sync</div>
               </div>
               <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
-                <div className="text-[10px] text-slate-400">0x0C01 · rlConsensusParams()</div>
-                <div className="text-cyan-300 truncate">0x0000000000000000000000000000000000000C01</div>
-                <div className="text-[11px] text-slate-300">5,000ms Block · 4 Active Validators</div>
+                <div className="text-[10px] text-slate-400">0x0C01 · rlConsensusParams</div>
+                <div className="text-cyan-300 truncate">0x0000...00000C01</div>
+                <div className="text-[11px] text-slate-300">5,000ms Block · 4 Validators</div>
               </div>
             </div>
           </div>

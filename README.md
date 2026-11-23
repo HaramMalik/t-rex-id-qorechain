@@ -7,13 +7,13 @@
 [![Security: NIST FIPS 203/204](https://img.shields.io/badge/PQC-NIST%20FIPS%20203%2F204%20ML--DSA--87-10b981?style=for-the-badge)](https://build.qorechain.io/kits)
 
 > **Build Before Q-Day Open-Source Integration Repository**
-> This public repository open-sources T-REX ID's **QoreChain Diana Testnet (Chain ID: 9800)** integration—including all 5 deployed ERC-3643 smart contracts, the `TrexPqcIdentityModule.sol` post-quantum compliance extension calling `0x0A01` (`pqcVerify`) and `0x0A02` (`pqcKeyStatus`), `@qorechain/qoreseal` (`ML-KEM-1024`) selective disclosure encryption, `@qorechain/qorescan` CBOM + FINMA Guidance 05/2026 audit artifacts, same-origin RPC relay proxy, and Hardhat unit tests under the **MIT License**.
+> This public repository open-sources T-REX ID's **QoreChain Diana Testnet (Chain ID: 9800)** integration—including all 5 deployed ERC-3643 smart contracts, three additive post-quantum & cross-VM precompile modules (`TrexPqcIdentityModule.sol` calling `0x0A01`/`0x0A02`, `PqcERC7913Verifier.sol` for official ONCHAINID v3 / OpenZeppelin `AccountERC7579` ML-DSA-87 verification, and `TrexCrossVmBridgeModule.sol` calling `0x0901` EVM-to-Native CosmWasm), `@qorechain/qoreseal` (`ML-KEM-1024`) selective disclosure encryption, `@qorechain/qorescan` CBOM + FINMA Guidance 05/2026 audit artifacts, same-origin RPC relay proxy, and 12 adversarial Hardhat unit tests under the **MIT License**.
 
 ---
 
 ## 1. Architecture Overview
 
-T-REX ID brings institutional Real-World Asset (RWA) tokenization and regulatory compliance (FINMA / Swiss DLT Act / SEC 144A) onto **QoreChain Diana** while staying 100% compliant with standard ERC-3643 and ONCHAINID v3 (ERC-7579 / ERC-7930):
+T-REX ID brings institutional Real-World Asset (RWA) tokenization and regulatory compliance (FINMA / Swiss DLT Act / SEC 144A) onto **QoreChain Diana** while staying 100% compliant with standard ERC-3643 and ONCHAINID v3 (ERC-7579 / ERC-7913 / ERC-7930):
 
 ```text
   Institutional Wallet (ECDSA secp256k1 + ML-DSA-87 + @qorechain/qoreseal ML-KEM-1024)
@@ -31,6 +31,8 @@ T-REX ID brings institutional Real-World Asset (RWA) tokenization and regulatory
   |  4. ModularCompliance        -> Gate-1 transfer restriction evaluator       |
   |  5. SwissQuantumBondToken    -> CH-QOR-01 (6 decimals) permissioned bond    |
   |  6. TrexPqcIdentityModule    -> Calls 0x0A01 (pqcVerify) & 0x0A02 KeyStatus |
+  |  7. PqcERC7913Verifier       -> ONCHAINID v3 ERC-7913 ML-DSA-87 (0x024ad318)|
+  |  8. TrexCrossVmBridgeModule  -> 0x0901 EVM -> Native CosmWasm Receipt Sync  |
   +-----------------------------------------------------------------------------+
 ```
 
@@ -48,9 +50,10 @@ All 5 ERC-3643 core contracts are deployed, verified on-chain, and anchored to S
 | **ModularCompliance** | — | `0xA5E22734a86f4099EEA5e3ed03C818149ebbD546` | `qor15h3zwd9gdaqfnm49u0ks8jqczj0th42xdalqat` | `#9,822,892` | [Inspect Compliance](https://dashboard.qorechain.io/explorer/address/0xA5E22734a86f4099EEA5e3ed03C818149ebbD546) |
 | **TREXFactory** | — | `0x110e9080FcB2DC0025262eD6eD213dc17dB6454E` | `qor1zy8fpq8uktwqqffx9mtw6gfac97mv32w869yvz` | `#9,822,894` | [Inspect Factory](https://dashboard.qorechain.io/explorer/address/0x110e9080FcB2DC0025262eD6eD213dc17dB6454E) |
 
-### Post-Quantum Precompile Compliance Module (`TrexPqcIdentityModule.sol`)
-* **Native Precompiles Called:** `0x0000000000000000000000000000000000000A01` (`pqcVerify`) and `0x0000000000000000000000000000000000000A02` (`pqcKeyStatus`).
-* **ERC-3643 + ONCHAINID v3 Enforcements:** Fail-closed `ML-DSA-87` (`algorithmId == 1`) + `possessionProven == true` gate, ERC-735 claim attestation verification, and ERC-7930 Cosmos-EVM envelope anchoring.
+### Additive Post-Quantum & Cross-VM Precompile Modules
+* **`TrexPqcIdentityModule.sol` (`0x0A01` + `0x0A02`):** Plug-and-play ERC-3643 `ModularCompliance` module enforcing fail-closed `ML-DSA-87` (`algorithmId == 1`) + `possessionProven == true` gating, ONCHAINID v3 ERC-735 claim attestation checks, and ERC-7930 Cosmos-EVM envelope anchoring.
+* **`PqcERC7913Verifier.sol` (`0x0A01` · ONCHAINID v3 / ERC-7913):** Stateless `IERC7913SignatureVerifier` returning canonical magic selector `0x024ad318` for valid ML-DSA-87 proofs and `0xffffffff` on invalid/empty/inactive calls, plus `isValidOnchainIdV3Signer(bytes signer, bytes32 hash, bytes signature)` for OpenZeppelin `AccountERC7579` / `SignerERC7913` smart accounts.
+* **`TrexCrossVmBridgeModule.sol` (`0x0901` · EVM-to-Native CosmWasm):** Atomic cross-VM compliance bridge invoking `0x0901 executeCrossVMCall(1, targetContract, payload)` against Diana's governance-allowlisted CosmWasm receipts contract (`qday-receipts-w3`: `qor1xjayq5ev55tkzpml9klxwyshr7gdrha0nurha9jhm0f0gdckksgs3gltw8`, Proposal 40, Code ID `865`) with JSON-injection-safe ASCII note validation and fail-closed `BridgeNotActive` protection.
 * **Security Audit:** Documented in [`./AUDIT_QCAI.md`](./AUDIT_QCAI.md) (Two-Stage Security & QCAI Alignment Audit).
 
 ### Sovereign Authority & Relayer Accounts
@@ -74,7 +77,7 @@ Built with official QoreChain SDKs, toolkits, and upstream open-source standards
 * **`@qorechain/qoreseal`** — NIST FIPS 203 `ML-KEM-1024` + `AES-256-GCM` selective disclosure encryption
 * **`@qorechain/qorescan`** — CycloneDX 1.6 CBOM (`cbom.json`) & FINMA Guidance 05/2026 inventory (`FINMA_PQC_REPORT.md`)
 * **`@qorechain/pqc`** — Core NIST FIPS 203/204 cryptographic primitives
-* **Upstream Standards & Libraries:** ERC-3643 T-REX & ONCHAINID v3 (ERC-7579 / ERC-7930), OpenZeppelin Contracts (`Ownable2Step`).
+* **Upstream Standards & Libraries:** ERC-3643 T-REX & ONCHAINID v3 (ERC-7579 / ERC-7913 / ERC-7930), OpenZeppelin Contracts (`Ownable2Step`).
 
 ---
 
@@ -83,29 +86,33 @@ Built with official QoreChain SDKs, toolkits, and upstream open-source standards
 ```text
 ├── contracts/
 │   ├── TrexPqcIdentityModule.sol       # Gate-1 ERC-3643 PQC module (0x0A01 & 0x0A02)
+│   ├── PqcERC7913Verifier.sol          # ONCHAINID v3 ERC-7913 ML-DSA-87 verifier (0x0A01)
+│   ├── TrexCrossVmBridgeModule.sol     # Atomic 0x0901 EVM-to-Native CosmWasm bridge
 │   ├── MockERC3643.sol                 # SwissQuantumBondToken (CH-QOR-01, 6 decimals)
 │   ├── TREXFactory.sol                 # Deterministic T-REX suite deployer
 │   ├── TREX_Compliance.sol             # ModularCompliance gate evaluator
 │   ├── TrustedIssuersRegistry.sol      # Authorized issuers & topics [100,101,103,105]
 │   ├── TrexToken.sol                   # Reference ERC-3643 permissioned token
 │   ├── mocks/
-│   │   └── MockQorePrecompiles.sol     # Local precompile mocks for Hardhat tests
+│   │   └── MockQorePrecompiles.sol     # Local 0x0A01/0x0A02/0x0901 mocks for Hardhat tests
 │   └── storage/
 │       └── IdentityRegistryStorage.sol # Investor ONCHAINID & country vault
 ├── test/
-│   └── TrexPqcIdentityModule.test.ts   # Hardhat adversarial unit test suite
+│   ├── TrexPqcIdentityModule.test.ts   # Hardhat adversarial tests (5 tests)
+│   └── OnchainIdV3PqcExtensions.test.ts # ERC-7913 & 0x0901 Cross-VM adversarial tests (7 tests)
 ├── scripts/
-│   ├── deployTrexPqcModule.mjs         # Diana 9800 deployer for TrexPqcIdentityModule
+│   ├── deployQorechainExtensions.mjs   # Unified Diana 9800 deployer for all 3 extensions
+│   ├── deployTrexPqcModule.mjs         # Single-contract Diana 9800 deployer
 │   ├── verifyLiveState.mjs             # Live bytecode & token metadata probe
 │   └── testComplianceIntegration.mjs   # Full Gate-1 compliance integration test suite
 ├── server/
 │   └── qorechainProxy.ts               # Express RPC & Diana telemetry relay proxy
 ├── src/
 │   ├── services/
-│   │   └── qorechainPqcService.ts      # QoreChain precompile probes, QoreSeal & AssetKit
+│   │   └── qorechainPqcService.ts      # Precompile probes, ERC-7913, 0x0901, QoreSeal & AssetKit
 │   └── components/
 │       ├── ContractsPage.tsx           # Verified QoreChain Suite Explorer UI
-│       ├── OnchainIdV3EnvelopePanel.tsx # ERC-7930 & 0x0A02 live probe UI
+│       ├── OnchainIdV3EnvelopePanel.tsx # ERC-7930, ERC-7913, 0x0A02 probe & 0x0901 live dispatch UI
 │       ├── QoreChainSovereignPanel.tsx # Sovereign Governance & QoreSeal panel
 │       └── QoreChainKitsSection.tsx    # Official QoreChain Developer Kits showcase
 ├── AUDIT_QCAI.md                       # Two-Stage Security & QCAI Alignment Audit
@@ -126,7 +133,7 @@ Built with official QoreChain SDKs, toolkits, and upstream open-source standards
 # 1. Install dependencies
 npm install
 
-# 2. Compile contracts & run the TrexPqcIdentityModule adversarial Hardhat test suite
+# 2. Compile contracts & run all 12 adversarial Hardhat tests
 npm run compile:contracts
 npm test
 
@@ -137,8 +144,11 @@ npm run verify:compliance
 # 4. Regenerate CycloneDX 1.6 CBOM & FINMA Guidance 05/2026 report
 npm run scan:cbom
 
-# 5. Deploy TrexPqcIdentityModule (requires funded .env PRIVATE_KEY with active EVM window)
-npm run deploy:pqc-module
+# 5. Deploy all 3 Diana extensions (requires funded .env PRIVATE_KEY with active EVM window)
+npm run deploy:qorechain-all
+
+# 5b. Deploy all 3 extensions AND broadcast one live 0x0901 Cross-VM receipt sync tx
+npm run deploy:qorechain-all:sync
 
 # 6. Start the local QoreChain RPC proxy relay on port 3000
 npm run start:proxy

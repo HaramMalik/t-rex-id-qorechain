@@ -64,6 +64,113 @@ export const TREX_PQC_IDENTITY_MODULE_ABI = [
   'function name() pure returns (string)'
 ] as const;
 
+export const QORECHAIN_NATIVE_RECEIPTS_CONTRACT =
+  'qor1xjayq5ev55tkzpml9klxwyshr7gdrha0nurha9jhm0f0gdckksgs3gltw8';
+
+export const ERC7913_MAGIC_VALUE = '0x024ad318';
+
+export const PQC_ERC7913_VERIFIER_ABI = [
+  'function PQC_VERIFY_PRECOMPILE() view returns (address)',
+  'function ML_DSA_87_ALG_ID() view returns (uint8)',
+  'function ERC7913_MAGIC_VALUE() view returns (bytes4)',
+  'function ERC7913_INVALID() view returns (bytes4)',
+  'function verify(bytes key, bytes32 hash, bytes signature) view returns (bytes4)',
+  'function isValidOnchainIdV3Signer(bytes signer, bytes32 hash, bytes signature) view returns (bool)',
+  'function precompileActive() view returns (bool)'
+] as const;
+
+export const TREX_CROSS_VM_BRIDGE_ABI = [
+  'function CROSS_VM_BRIDGE_PRECOMPILE() view returns (address)',
+  'function TARGET_VM_NATIVE() view returns (uint8)',
+  'function DEFAULT_NATIVE_RECEIPTS_CONTRACT() view returns (string)',
+  'function nativeTargetContract() view returns (string)',
+  'function syncCount() view returns (uint256)',
+  'function enforceIdentityVerification() view returns (bool)',
+  'function buildReceiptNote(address evmAccount, string cosmosBech32, bytes32 keyspaceDigest, uint8 identityRole) pure returns (string)',
+  'function getLastSync(address evmAccount) view returns (tuple(uint256 syncId, string cosmosBech32, bytes32 keyspaceDigest, uint8 identityRole, uint64 syncedAt, bytes32 nativeReplyHash))',
+  'function dispatchIdentitySync(address evmAccount, string cosmosBech32, bytes32 keyspaceDigest, uint8 identityRole) returns (uint256 syncId, bytes nativeReply)',
+  'event CrossVmIdentitySynced(uint256 indexed syncId, address indexed evmAccount, string cosmosBech32, bytes32 keyspaceDigest, uint8 identityRole, string nativeTarget, bytes nativeReply)'
+] as const;
+
+const envAny = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
+
+export const QORECHAIN_EXTENSIONS_DEFAULTS = {
+  trexPqcIdentityModule: (envAny.VITE_TREX_PQC_MODULE_ADDRESS as string) || '',
+  pqcErc7913Verifier: (envAny.VITE_PQC_ERC7913_VERIFIER_ADDRESS as string) || '',
+  trexCrossVmBridgeModule: (envAny.VITE_TREX_CROSSVM_BRIDGE_ADDRESS as string) || ''
+} as const;
+
+export function buildCrossVmReceiptPreview(
+  evmAccount: string,
+  cosmosBech32: string,
+  keyspaceDigest: string,
+  identityRole: number
+): { note: string; jsonPayload: string } {
+  const cleanAddr = ethers.isAddress(evmAccount)
+    ? ethers.getAddress(evmAccount).toLowerCase()
+    : '0x0000000000';
+  const shortEvm = `0x${cleanAddr.slice(2, 12)}`;
+  const cleanDigest = keyspaceDigest.startsWith('0x') ? keyspaceDigest.slice(2) : keyspaceDigest;
+  const shortDigest = cleanDigest.slice(0, 12).toLowerCase();
+  const safeRole = Math.max(0, Math.min(7, Math.floor(identityRole)));
+  const note = `TREX-ERC7930|r=${safeRole}|evm=${shortEvm}|qor=${cosmosBech32}|d=${shortDigest}`;
+  return {
+    note,
+    jsonPayload: `{"record":{"note":"${note}"}}`
+  };
+}
+
+export interface CrossVmDispatchResult {
+  txHash: string;
+  blockNumber: number;
+  explorerUrl: string;
+  note: string;
+  jsonPayload: string;
+}
+
+export async function dispatchCrossVmIdentitySyncOnChain(
+  bridgeAddress: string,
+  evmAccount: string,
+  cosmosBech32: string,
+  keyspaceDigest: string,
+  identityRole: number
+): Promise<CrossVmDispatchResult> {
+  if (!ethers.isAddress(bridgeAddress)) {
+    throw new Error('Enter a valid deployed TrexCrossVmBridgeModule address (0x...) on QoreChain Diana (9800).');
+  }
+  const cleanBridge = ethers.getAddress(bridgeAddress);
+  const cleanAccount = ethers.getAddress(evmAccount);
+
+  await ensureQoreChainNetwork();
+
+  const eth = (window as any).ethereum;
+  const browserProvider = new ethers.BrowserProvider(eth);
+  const signer = await browserProvider.getSigner();
+
+  const bridgeContract = new ethers.Contract(cleanBridge, TREX_CROSS_VM_BRIDGE_ABI, signer);
+  const preview = buildCrossVmReceiptPreview(cleanAccount, cosmosBech32, keyspaceDigest, identityRole);
+
+  const tx = await bridgeContract.dispatchIdentitySync(
+    cleanAccount,
+    cosmosBech32,
+    keyspaceDigest,
+    identityRole,
+    {
+      ...QORECHAIN_TX_OVERRIDES
+    }
+  );
+  const receipt = await tx.wait(1);
+
+  return {
+    txHash: tx.hash,
+    blockNumber: receipt?.blockNumber ? Number(receipt.blockNumber) : 0,
+    explorerUrl: getQoreChainTxUrl(tx.hash),
+    note: preview.note,
+    jsonPayload: preview.jsonPayload
+  };
+}
+
+
 export const QORECHAIN_CONTRACT_BECH32 = {
   IdentityRegistryStorage: 'qor1za9efqy46mtdg6fvzxrew7hzd08tju7fsc8t79',
   TrustedIssuersRegistry: 'qor1rn22fl0g75vf4mha3rcqvgwqgy97gthml34fee',

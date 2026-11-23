@@ -11,7 +11,9 @@
     "compile:contracts": "hardhat compile",
     "test": "hardhat test",
     "deploy:pqc-module": "hardhat compile && node scripts/deployTrexPqcModule.mjs",
-    "scan:cbom": "qorescan scan --network testnet --address qor18sp9j6zplpun44zu4ryqdzpq6cs2wc7mrtt9ad qor19y6ah0umdhueq85g9m30xvzrxxeujzcrcqeymm qor1xkgjactk7qpcqr4arfsgrx5a75g50ne6uwv0qr --tls evm-testnet.qore.host:443 --solidity ./contracts --out cbom.json --finma FINMA_PQC_REPORT.md",
+    "deploy:qorechain-all": "hardhat compile && node scripts/deployQorechainExtensions.mjs",
+    "deploy:qorechain-all:sync": "hardhat compile && node scripts/deployQorechainExtensions.mjs --dispatch-sync",
+    "scan:cbom": "qorescan scan --network testnet --address qor18sp9j6zplpun44zu4ryqdzpq6cs2wc7mrtt9ad --address qor19y6ah0umdhueq85g9m30xvzrxxeujzcrcqeymm --address qor1xkgjactk7qpcqr4arfsgrx5a75g50ne6uwv0qr --tls evm-testnet.qore.host:443 --solidity ./contracts --name t-rex-id-qorechain --out cbom.json && qorescan report --framework finma --cbom cbom.json --out FINMA_PQC_REPORT.md",
     "start:proxy": "tsx server/qorechainProxy.ts"
   },
   "dependencies": {

@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:655eb43a-499f-55cb-beca-6dd3abd4e1aa",
+  "serialNumber": "urn:uuid:0d4865af-fce3-571f-a480-5d9a8e2b5346",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-21T04:10:10Z",
+    "timestamp": "2026-11-22T21:43:27Z",
     "tools": {
       "components": [
         {
@@ -27,7 +27,7 @@
     "component": {
       "type": "platform",
       "bom-ref": "target",
-      "name": "QoreChain testnet"
+      "name": "t-rex-id-qorechain"
     },
     "properties": [
       {
@@ -176,7 +176,7 @@
       },
       {
         "name": "qorescan:chain:protocol-features",
-        "value": "341 enabled at height 10472300 (31 PQC-related listed)"
+        "value": "341 enabled at height 10577035 (31 PQC-related listed)"
       },
       {
         "name": "qorescan:chain:pqc:hybrid-signature-mode",
@@ -228,7 +228,7 @@
       },
       {
         "name": "qorescan:solidity:files",
-        "value": "8"
+        "value": "10"
       },
       {
         "name": "qorescan:note",
@@ -570,7 +570,7 @@
           {
             "location": "https://api-testnet.qore.host/cosmos/base/tendermint/v1beta1/validatorsets/latest?pagination.limit=1000",
             "symbol": "validators[].pub_key",
-            "additionalContext": "4 active validators with /cosmos.crypto.ed25519.PubKey consensus keys at height 10472301"
+            "additionalContext": "4 active validators with /cosmos.crypto.ed25519.PubKey consensus keys at height 10577037"
           }
         ]
       },
@@ -664,6 +664,24 @@
       "evidence": {
         "occurrences": [
           {
+            "location": "TrexCrossVmBridgeModule.sol",
+            "line": 131,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "TrexCrossVmBridgeModule.sol",
+            "line": 156,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
+            "location": "TrexPqcIdentityModule.sol",
+            "line": 278,
+            "symbol": "keccak256",
+            "additionalContext": "Keccak-256 hash"
+          },
+          {
             "location": "https://api-testnet.qore.host/cosmos/evm/vm/v1/params",
             "symbol": "evm",
             "additionalContext": "EVM lane: transactions signed with ECDSA secp256k1 over Keccak-256; ecrecover (0x01), sha256 (0x02) and ripemd160 (0x03) precompiles"
@@ -727,6 +745,24 @@
       "evidence": {
         "occurrences": [
           {
+            "location": "PqcERC7913Verifier.sol",
+            "line": 23,
+            "symbol": "pqcVerify",
+            "additionalContext": "QoreChain pqcVerify precompile (0x0A01): ML-DSA-87 signature verification"
+          },
+          {
+            "location": "TrexPqcIdentityModule.sol",
+            "line": 39,
+            "symbol": "pqcVerify",
+            "additionalContext": "QoreChain pqcVerify precompile (0x0A01): ML-DSA-87 signature verification"
+          },
+          {
+            "location": "TrexPqcIdentityModule.sol",
+            "line": 42,
+            "symbol": "pqcKeyStatus",
+            "additionalContext": "QoreChain pqcKeyStatus precompile (0x0A02): reads an account's registered ML-DSA-87 key"
+          },
+          {
             "location": "https://api-testnet.qore.host/cosmos/evm/vm/v1/params",
             "symbol": "params.active_static_precompiles",
             "additionalContext": "EVM precompile pqcVerify (0x0000000000000000000000000000000000000a01) is active: signature verification from contracts"
@@ -783,6 +819,10 @@
         {
           "name": "qorescan:source",
           "value": "chain"
+        },
+        {
+          "name": "qorescan:source",
+          "value": "solidity"
         },
         {
           "name": "qorescan:pqc:default-signature-algorithm",
@@ -1271,7 +1311,7 @@
           {
             "location": "https://api-testnet.qore.host/cosmos/base/tendermint/v1beta1/validatorsets/latest?pagination.limit=1000",
             "symbol": "validators[].pub_key",
-            "additionalContext": "4 active validators with /cosmos.crypto.ed25519.PubKey consensus keys at height 10472301"
+            "additionalContext": "4 active validators with /cosmos.crypto.ed25519.PubKey consensus keys at height 10577037"
           }
         ]
       },

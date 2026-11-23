@@ -4,8 +4,8 @@
 
 | | |
 |---|---|
-| CBOM | `urn:uuid:655eb43a-499f-55cb-beca-6dd3abd4e1aa` |
-| Generated | 2026-11-21T04:10:10Z by qorescan 0.1.0 |
+| CBOM | `urn:uuid:0d4865af-fce3-571f-a480-5d9a8e2b5346` |
+| Generated | 2026-11-22T21:43:27Z by qorescan 0.1.0 |
 | Chain | `qorechain-diana` |
 | Scanned | chain, solidity, tls |
 
@@ -42,10 +42,10 @@ NIST IR 8547 deprecates quantum-vulnerable public-key algorithms (RSA, ECDSA, Ed
 | Ed25519 | signature | - | 0 | not covered (quantum-vulnerable) | Deprecated after 2030, disallowed after 2035 (NIST IR 8547) | `https://api-testnet.qore.host/cosmos/base/tendermint/v1beta1/validatorsets/latest?pagination.limit=1000` |
 | RSA PKCS#1 v1.5 with SHA-256 | signature | - | 0 | not covered (quantum-vulnerable) | Deprecated after 2030, disallowed after 2035 (NIST IR 8547) | `evm-testnet.qore.host:443` |
 | X25519MLKEM768 | kem | 768 | 3 | hybrid; PQ part per FIPS 203 | Hybrid: post-quantum component approved; classical component deprecated after 2030, disallowed after 2035 (NIST IR 8547) | `evm-testnet.qore.host:443` |
-| ML-DSA-87 | signature | 87 | 5 | FIPS 204 | Not scheduled for deprecation by NIST IR 8547 | `https://api-testnet.qore.host/cosmos/evm/vm/v1/params` (+3 more) |
+| ML-DSA-87 | signature | 87 | 5 | FIPS 204 | Not scheduled for deprecation by NIST IR 8547 | `PqcERC7913Verifier.sol:23` (+6 more) |
 | AES-128-GCM | ae | 128 | 1 | not applicable (symmetric or hash) | Not scheduled for deprecation by NIST IR 8547 | `evm-testnet.qore.host:443` |
 | HKDF-SHA256 | kdf | 256 | not defined | not applicable (symmetric or hash) | Not scheduled for deprecation by NIST IR 8547 | `evm-testnet.qore.host:443` |
-| Keccak-256 | hash | 256 | not defined | not applicable (symmetric or hash) | Not a NIST-standardised algorithm; not scheduled by NIST IR 8547 | `https://api-testnet.qore.host/cosmos/evm/vm/v1/params` (+2 more) |
+| Keccak-256 | hash | 256 | not defined | not applicable (symmetric or hash) | Not a NIST-standardised algorithm; not scheduled by NIST IR 8547 | `TrexCrossVmBridgeModule.sol:131` (+5 more) |
 | SHA-256 | hash | 256 | 2 | not applicable (symmetric or hash) | Not scheduled for deprecation by NIST IR 8547 | `evm-testnet.qore.host:443` |
 
 ## Protocols
@@ -92,7 +92,7 @@ QoreScan records public keys and key types only; it never reads private key valu
 | `chain:pqc:min-security-level` | 5 |
 | `chain:pqc:pqc-primary` | true |
 | `chain:protocol-feature` | pqc-sign-bytes-v2; evm-pqc-authorisation-window; pqc-ecdsa-pubkey-validation; pqc-keyed-account-maintenance-hybrid; pqc-registration-integrity; pqc-rotation-replay-guard; pqc-algorithm-governance-guards; pqc-hybrid-single-extension; pqc-keyless-extension-closed; evm-pqc-window-targets; pqc-possession-flag; pqc-kem-registry; pqc-rotate-key-size-check; pqc-verify-once-per-signer; pqc-multisig; pqc-verify-gas-calibrated; pqc-consent-authz-limiter; pqc-consent-outer-signer; pqc-rotation-ends-evm-consent; pqc-degenerate-key-refused; svm-pqc-key-lane-gated; pqc-registration-ends-evm-consent; pqc-consent-own-message; svm-pqc-key-for-wallets; svm-pqc-authorisation-window; qcb-pqc-submitter; pqc-key-change-clears-evm-delegation; pqc-svm-window-key-proof; pqc-registration-ends-svm-window; pqc-hybrid-embedded-key-degenerate; qcb-pqc-submitter-own-message |
-| `chain:protocol-features` | 341 enabled at height 10472300 (31 PQC-related listed) |
+| `chain:protocol-features` | 341 enabled at height 10577035 (31 PQC-related listed) |
 | `chain:rest` | https://api-testnet.qore.host |
 
 ## Scan notes

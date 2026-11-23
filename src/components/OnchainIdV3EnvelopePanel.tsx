@@ -1,6 +1,19 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { Key, ShieldCheck, Globe, Copy, Check, Layers, Fingerprint, RefreshCw, Cpu } from 'lucide-react';
+import {
+  Key,
+  ShieldCheck,
+  Globe,
+  Copy,
+  Check,
+  Layers,
+  Fingerprint,
+  RefreshCw,
+  Cpu,
+  ArrowRightLeft,
+  ExternalLink,
+  Send
+} from 'lucide-react';
 import {
   ONCHAINID_V3_KEY_PURPOSES,
   ONCHAINID_V3_IDENTITY_TYPES,
@@ -9,16 +22,24 @@ import {
 import {
   buildErc7930InteroperableEnvelope,
   buildQoreSealStatus,
+  buildCrossVmReceiptPreview,
+  dispatchCrossVmIdentitySyncOnChain,
   queryQorePqcKeyStatus,
   QORECHAIN_PRECOMPILES,
   QORECHAIN_CHAIN_ID,
-  type LivePqcPrecompileKeyStatus
+  QORECHAIN_NATIVE_RECEIPTS_CONTRACT,
+  QORECHAIN_EXTENSIONS_DEFAULTS,
+  ERC7913_MAGIC_VALUE,
+  type LivePqcPrecompileKeyStatus,
+  type CrossVmDispatchResult
 } from '../services/qorechainPqcService';
 
 interface OnchainIdV3EnvelopePanelProps {
   targetAddress: string;
   chainId?: number;
 }
+
+const CROSS_VM_BRIDGE_STORAGE_KEY = 'trex_crossvm_bridge_address';
 
 export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> = ({
   targetAddress,
@@ -28,6 +49,17 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [pqcKeyStatus, setPqcKeyStatus] = useState<LivePqcPrecompileKeyStatus | null>(null);
   const [isLoadingPqc, setIsLoadingPqc] = useState<boolean>(false);
+
+  const [bridgeAddress, setBridgeAddress] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = window.localStorage.getItem(CROSS_VM_BRIDGE_STORAGE_KEY);
+      if (saved) return saved;
+    }
+    return QORECHAIN_EXTENSIONS_DEFAULTS.trexCrossVmBridgeModule;
+  });
+  const [isDispatchingBridge, setIsDispatchingBridge] = useState<boolean>(false);
+  const [bridgeResult, setBridgeResult] = useState<CrossVmDispatchResult | null>(null);
+  const [bridgeError, setBridgeError] = useState<string | null>(null);
 
   const normalizedAddress = useMemo(() => {
     return ethers.isAddress(targetAddress)
@@ -64,6 +96,19 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
     );
   }, [selectedIdentityType]);
 
+  const identityRoleIndex = useMemo(() => {
+    return Math.max(0, Math.min(7, activeTypeSpec.code - 1));
+  }, [activeTypeSpec]);
+
+  const crossVmPreview = useMemo(() => {
+    return buildCrossVmReceiptPreview(
+      normalizedAddress,
+      envelope.qorBech32Address,
+      envelope.unifiedKeyspaceDigest,
+      identityRoleIndex
+    );
+  }, [normalizedAddress, envelope.qorBech32Address, envelope.unifiedKeyspaceDigest, identityRoleIndex]);
+
   const derivedKeys = useMemo(() => {
     return ONCHAINID_V3_KEY_PURPOSES.map((purpose) => ({
       ...purpose,
@@ -81,6 +126,39 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
     navigator.clipboard.writeText(value);
     setCopiedField(key);
     setTimeout(() => setCopiedField(null), 1800);
+  };
+
+  const handleBridgeAddressChange = (val: string) => {
+    setBridgeAddress(val);
+    setBridgeError(null);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(CROSS_VM_BRIDGE_STORAGE_KEY, val.trim());
+    }
+  };
+
+  const handleDispatchCrossVmSync = async () => {
+    setBridgeError(null);
+    setBridgeResult(null);
+    setIsDispatchingBridge(true);
+    try {
+      const result = await dispatchCrossVmIdentitySyncOnChain(
+        bridgeAddress.trim(),
+        normalizedAddress,
+        envelope.qorBech32Address,
+        envelope.unifiedKeyspaceDigest,
+        identityRoleIndex
+      );
+      setBridgeResult(result);
+    } catch (err: any) {
+      const msg =
+        err?.shortMessage ||
+        err?.reason ||
+        err?.message ||
+        'Cross-VM 0x0901 dispatch failed. Confirm wallet is on QoreChain Diana (9800) with an active EVM window.';
+      setBridgeError(msg);
+    } finally {
+      setIsDispatchingBridge(false);
+    }
   };
 
   return (
@@ -215,12 +293,12 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
         </div>
       </div>
 
-      {/* Live 0x0A02 / 0x0A01 Precompile Verification & @qorechain/qoreseal Envelope */}
+      {/* Live 0x0A02 / 0x0A01 Precompile Verification, ERC-7913 Verifier & @qorechain/qoreseal */}
       <div className="rounded-2xl bg-slate-900/90 border border-white/10 p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
             <Cpu className="w-4 h-4 text-cyan-400" />
-            <span>Live Diana Precompile & QoreSeal Attestation</span>
+            <span>Live Diana Precompiles · ERC-7913 PQC Verifier · QoreSeal</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-mono text-slate-400">
@@ -238,21 +316,21 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
           <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 space-y-2">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-400">0x0A02 pqcKeyStatus(address)</span>
+              <span className="text-slate-400">0x0A02 pqcKeyStatus</span>
               <span className={pqcKeyStatus?.possessionProven ? 'text-emerald-400 font-bold' : 'text-amber-300 font-bold'}>
                 {pqcKeyStatus === null
                   ? 'PROBING...'
                   : pqcKeyStatus.possessionProven
-                  ? 'HYBRID POSSESSION PROVEN'
+                  ? 'POSSESSION PROVEN'
                   : pqcKeyStatus.registered
-                  ? 'REGISTERED · UNPROVEN'
-                  : 'NO PQC KEY REGISTERED'}
+                  ? 'REGISTERED'
+                  : 'NO PQC KEY'}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2 pt-1 tabular-nums">
+            <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums">
               <div>
                 <div className="text-[10px] text-slate-500">Algorithm</div>
                 <div className="text-slate-200 font-semibold">{pqcKeyStatus?.algorithmLabel || '—'}</div>
@@ -261,19 +339,35 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
                 <div className="text-[10px] text-slate-500">Pubkey Size</div>
                 <div className="text-cyan-300 font-semibold">{pqcKeyStatus ? `${pqcKeyStatus.pubkeyBytes} B` : '—'}</div>
               </div>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-black/50 border border-cyan-500/25 space-y-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-cyan-300 font-bold">PqcERC7913Verifier</span>
+              <span className="text-emerald-400 font-bold">{ERC7913_MAGIC_VALUE}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums">
               <div>
-                <div className="text-[10px] text-slate-500">0x0A01 Verify</div>
-                <div className="text-emerald-300 font-semibold">TrexPqcIdentityModule</div>
+                <div className="text-[10px] text-slate-500">Account Standard</div>
+                <div className="text-white font-semibold">ERC-7579 / v3</div>
               </div>
+              <div>
+                <div className="text-[10px] text-slate-500">Precompile</div>
+                <div className="text-cyan-300 font-semibold">0x0A01 (Alg 1)</div>
+              </div>
+            </div>
+            <div className="text-[10px] text-slate-400 truncate">
+              Signer: abi.encodePacked(verifier, mlDsa87Pubkey)
             </div>
           </div>
 
           <div className="p-3.5 rounded-xl bg-black/50 border border-purple-500/25 space-y-2">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-purple-300 font-bold">{qoreSeal.package} · {qoreSeal.kemAlgorithm}</span>
-              <span className="text-emerald-400 font-bold">{qoreSeal.status}</span>
+              <span className="text-purple-300 font-bold">{qoreSeal.package}</span>
+              <span className="text-emerald-400 font-bold">ML-KEM-1024</span>
             </div>
-            <div className="grid grid-cols-3 gap-2 pt-1 tabular-nums">
+            <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums">
               <div>
                 <div className="text-[10px] text-slate-500">ML-KEM Pubkey</div>
                 <div className="text-white font-semibold">{qoreSeal.mlkemPubkeyBytes.toLocaleString()} B</div>
@@ -282,16 +376,114 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
                 <div className="text-[10px] text-slate-500">Sealed Envelope</div>
                 <div className="text-purple-300 font-semibold">{qoreSeal.sealedEnvelopeBytes.toLocaleString()} B</div>
               </div>
-              <div>
-                <div className="text-[10px] text-slate-500">HKDF Context</div>
-                <div className="text-slate-300 font-semibold truncate" title={qoreSeal.hkdfContext}>{qoreSeal.hkdfContext}</div>
-              </div>
             </div>
             <div className="text-[10px] text-slate-400 truncate">
               KEM Digest: {qoreSeal.encapsulatedKeyDigest}
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Atomic Cross-VM Identity Sync (0x0901 EVM -> Native CosmWasm) */}
+      <div className="rounded-2xl bg-slate-900/90 border border-emerald-500/30 p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400">
+              <ArrowRightLeft className="w-4 h-4 shrink-0" />
+              <span>Cross-VM Identity Sync · Precompile 0x0901 (EVM → Native CosmWasm)</span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Dispatches one atomic ERC-7930 compliance attestation receipt from QoreChain EVM to Diana&apos;s governance-allowlisted CosmWasm contract via <code className="text-cyan-300">TrexCrossVmBridgeModule</code>.
+            </p>
+          </div>
+          <span className="text-[11px] font-mono text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 px-2.5 py-1 rounded shrink-0 whitespace-nowrap">
+            Target VM: 1 (Native)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+          <div className="space-y-1.5">
+            <label
+              htmlFor="trex-crossvm-bridge-input"
+              className="block text-[11px] text-slate-300 font-semibold"
+            >
+              Deployed TrexCrossVmBridgeModule Address (Diana 9800)
+            </label>
+            <input
+              id="trex-crossvm-bridge-input"
+              type="text"
+              value={bridgeAddress}
+              onChange={(e) => handleBridgeAddressChange(e.target.value)}
+              placeholder="0x... (from npm run deploy:qorechain-all)"
+              className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/15 text-xs font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="text-[11px] text-slate-300 font-semibold">
+              Allowlisted Native CosmWasm Target (Proposal 40 · qday-receipts-w3)
+            </div>
+            <div className="px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-emerald-300 truncate select-all" title={QORECHAIN_NATIVE_RECEIPTS_CONTRACT}>
+              {QORECHAIN_NATIVE_RECEIPTS_CONTRACT}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-xl bg-black/60 border border-white/10 space-y-1.5 text-xs font-mono">
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Sanitized CosmWasm Execute Payload ({crossVmPreview.note.length} / 140 ASCII chars)</span>
+            <span className="text-emerald-400">executeCrossVMCall(1, target, payload)</span>
+          </div>
+          <div className="text-slate-200 break-all text-[11px]">{crossVmPreview.jsonPayload}</div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={handleDispatchCrossVmSync}
+            disabled={isDispatchingBridge || !ethers.isAddress(bridgeAddress.trim())}
+            className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>
+              {isDispatchingBridge
+                ? 'Broadcasting 0x0901 Cross-VM Tx...'
+                : 'Dispatch Cross-VM Identity Sync (0x0901)'}
+            </span>
+          </button>
+
+          {!ethers.isAddress(bridgeAddress.trim()) && (
+            <span className="text-[11px] font-mono text-slate-400">
+              Run <code className="text-cyan-300">npm run deploy:qorechain-all</code> and paste the deployed bridge address above.
+            </span>
+          )}
+        </div>
+
+        {bridgeError && (
+          <div className="p-3 rounded-xl bg-rose-950/50 border border-rose-500/40 text-xs font-mono text-rose-200 break-words">
+            {bridgeError}
+          </div>
+        )}
+
+        {bridgeResult && (
+          <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-1.5 text-xs font-mono">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-emerald-300 font-bold">
+                Cross-VM 0x0901 Receipt Anchored · Block #{bridgeResult.blockNumber.toLocaleString()}
+              </span>
+              <a
+                href={bridgeResult.explorerUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-cyan-300 hover:text-white inline-flex items-center gap-1 underline"
+              >
+                <span>Inspect on Diana Explorer</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            <div className="text-[11px] text-slate-300 break-all">Tx Hash: {bridgeResult.txHash}</div>
+          </div>
+        )}
       </div>
 
       {/* All 6 ONCHAINID v3 Key Purposes */}
@@ -337,3 +529,4 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
     </div>
   );
 };
+
