@@ -1,0 +1,136 @@
+{
+  "network": "qorechain-diana",
+  "chainId": 9800,
+  "evmRpc": "https://evm-testnet.qore.host",
+  "restApi": "https://api-testnet.qore.host",
+  "deployedAt": "2026-11-24T17:37:05.971Z",
+  "broadcasterEvm": "0x3C02596841f8793ad45Ca8c8068820d620A763dB",
+  "broadcasterBech32": "qor18sp9j6zplpun44zu4ryqdzpq6cs2wc7mrtt9ad",
+  "initialOwner": "0x2935dbbF9b6DF9901E882Ee2f3304331B3c90B03",
+  "identityRegistry": "0x174b948095D6D6d4692C1187977AE26bceB973c9",
+  "testnetAddresses": [
+    "qor18sp9j6zplpun44zu4ryqdzpq6cs2wc7mrtt9ad",
+    "qor19y6ah0umdhueq85g9m30xvzrxxeujzcrcqeymm",
+    "qor1xkgjactk7qpcqr4arfsgrx5a75g50ne6uwv0qr"
+  ],
+  "coreErc3643Suite": {
+    "IdentityRegistryStorage": {
+      "address": "0x174b948095D6D6d4692C1187977AE26bceB973c9",
+      "bech32": "qor1za9efqy46mtdg6fvzxrew7hzd08tju7fsc8t79",
+      "txHash": "0xc224753e88c6d7997ed85ea2b353696eddcdc4c794425812f7961c49870d4113",
+      "blockNumber": 9822887,
+      "bytecodeBytes": 1270
+    },
+    "TrustedIssuersRegistry": {
+      "address": "0x1cd4A4FDe8f5189aEeFD88F00621c0410BE42EFb",
+      "bech32": "qor1rn22fl0g75vf4mha3rcqvgwqgy97gthml34fee",
+      "txHash": "0x624661e3360ad7f0a425cae1e57a59a3106e1c310b333078b2d60ea7855af013",
+      "blockNumber": 9822889,
+      "bytecodeBytes": 1790
+    },
+    "ModularCompliance": {
+      "address": "0xA5E22734a86f4099EEA5e3ed03C818149ebbD546",
+      "bech32": "qor15h3zwd9gdaqfnm49u0ks8jqczj0th42xdalqat",
+      "txHash": "0x5eb5dc9406a5d3998f919fc955f58425157436c2650ba5b52bfef7a1e57f6a5a",
+      "blockNumber": 9822892,
+      "bytecodeBytes": 1053
+    },
+    "TREXFactory": {
+      "address": "0x110e9080FcB2DC0025262eD6eD213dc17dB6454E",
+      "bech32": "qor1zy8fpq8uktwqqffx9mtw6gfac97mv32w869yvz",
+      "txHash": "0xeac008b240154a42b10c4caa9b0a504035596a070444295418903d9094016f53",
+      "blockNumber": 9822894,
+      "bytecodeBytes": 9370
+    },
+    "SwissQuantumBondToken": {
+      "address": "0x6A9ca1D10c054C5aE9f5F597c7662083110a9834",
+      "bech32": "qor1d2w2r5gvq4x946047ktuwe3qsvgs4xp5w9fzs2",
+      "txHash": "0x87750a7b6a5e709589ee0056a5120e45bd68167591af93b22a353d6a6c376067",
+      "blockNumber": 9822896,
+      "bytecodeBytes": 4969
+    }
+  },
+  "extensions": {
+    "TrexPqcIdentityModule": {
+      "address": "0x62600c1C206C089a68D53c65eE19A3f4A98e26a2",
+      "txHash": "0xc9e9e475ad65ef40c2cff03fc10e562ebd663eda63bc40522e99f01c7488fbfa",
+      "blockNumber": 10680152,
+      "bytecodeBytes": 5487,
+      "precompiles": [
+        "0x0000000000000000000000000000000000000a01",
+        "0x0000000000000000000000000000000000000a02"
+      ]
+    },
+    "PqcERC7913Verifier": {
+      "address": "0xFcd34140F26AF7bCb8935DdeF90F1936b36A1FAe",
+      "txHash": "0xee4c20364dc6978faee1e0f4dc75292e9cd81deb1bf08312eb73d8c125f59041",
+      "blockNumber": 10680154,
+      "bytecodeBytes": 1467,
+      "magicValue": "0x024ad318",
+      "precompiles": [
+        "0x0000000000000000000000000000000000000a01"
+      ]
+    },
+    "TrexCrossVmBridgeModule": {
+      "address": "0x72E4B9507cBd76b9177d61c8a14bd127201EAE0C",
+      "txHash": "0x6a59732ede95facde99d0b858a5d32063e6ffd2c9b8f36a956742304875e452c",
+      "blockNumber": 10680156,
+      "bytecodeBytes": 6150,
+      "nativeTarget": "qor1xjayq5ev55tkzpml9klxwyshr7gdrha0nurha9jhm0f0gdckksgs3gltw8",
+      "precompiles": [
+        "0x0000000000000000000000000000000000000901"
+      ],
+      "crossVmSyncTxHash": "0x369d3276f63d0114433078146402cc936e4f8ef0300d12c5b2668824fb6c8b87",
+      "crossVmSyncBlock": 10680158
+    }
+  },
+  "cosmosNativeActions": {
+    "MsgOpenEVMWindow": {
+      "typeUrl": "/qorechain.pqc.v1.MsgOpenEVMWindow",
+      "sender": "qor18sp9j6zplpun44zu4ryqdzpq6cs2wc7mrtt9ad",
+      "txHash": "B029C7CB64675E42CE3EC4B8AB2D32EA6684CBEA1F3E2D342C60BEFBB64E0EE3",
+      "blockHeight": 10680149,
+      "expiryHeight": 10697429
+    },
+    "MsgRegisterKEMKey": {
+      "typeUrl": "/qorechain.pqc.v1.MsgRegisterKEMKey",
+      "sender": "qor18sp9j6zplpun44zu4ryqdzpq6cs2wc7mrtt9ad",
+      "algorithmId": 2,
+      "algorithmName": "mlkem1024",
+      "publicKeyBytes": 1568,
+      "txHash": "B0070E96706158732A6AF774573E30FB696FE4D9F2CF1A1C7696129B2252CAB1",
+      "blockHeight": 10727844
+    },
+    "MsgSwapExactIn": {
+      "typeUrl": "/qorechain.amm.v1.MsgSwapExactIn",
+      "sender": "qor18sp9j6zplpun44zu4ryqdzpq6cs2wc7mrtt9ad",
+      "poolId": "2",
+      "tokenIn": "1000uqor",
+      "tokenOut": "27erc20:0x97143B771D34ddb9130b807b135Ae675A5a963CA",
+      "txHash": "9B77C0113F61EF6867C10222BB0A3774AE411FFADD4CB4C2A80270ECFD0E040A",
+      "blockHeight": 10727847
+    }
+  },
+  "buildQorechainMapping": {
+    "shipWeeksFirstPqcCheckTxHash": "0xc9e9e475ad65ef40c2cff03fc10e562ebd663eda63bc40522e99f01c7488fbfa",
+    "shipWeeksFirstQoreSealKeyTxHash": "B0070E96706158732A6AF774573E30FB696FE4D9F2CF1A1C7696129B2252CAB1",
+    "shipWeeksFirstSwapInPoolTxHash": "9B77C0113F61EF6867C10222BB0A3774AE411FFADD4CB4C2A80270ECFD0E040A",
+    "crossVmEvmToNativeTxHash": "0x369d3276f63d0114433078146402cc936e4f8ef0300d12c5b2668824fb6c8b87",
+    "editProjectTestnetAddresses": [
+      "qor18sp9j6zplpun44zu4ryqdzpq6cs2wc7mrtt9ad",
+      "qor19y6ah0umdhueq85g9m30xvzrxxeujzcrcqeymm",
+      "qor1xkgjactk7qpcqr4arfsgrx5a75g50ne6uwv0qr"
+    ],
+    "editProjectAddresses": [
+      "0x62600c1C206C089a68D53c65eE19A3f4A98e26a2",
+      "0xFcd34140F26AF7bCb8935DdeF90F1936b36A1FAe",
+      "0x72E4B9507cBd76b9177d61c8a14bd127201EAE0C",
+      "0x174b948095D6D6d4692C1187977AE26bceB973c9",
+      "0x1cd4A4FDe8f5189aEeFD88F00621c0410BE42EFb",
+      "0xA5E22734a86f4099EEA5e3ed03C818149ebbD546",
+      "0x110e9080FcB2DC0025262eD6eD213dc17dB6454E",
+      "0x6A9ca1D10c054C5aE9f5F597c7662083110a9834"
+    ],
+    "submissionDeadlineUtc": "2026-12-02T23:59:00Z"
+  }
+}

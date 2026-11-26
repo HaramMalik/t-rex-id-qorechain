@@ -140,7 +140,7 @@ export const ContractsPage: React.FC = () => {
               <span className="text-cyan-300 font-bold bg-black/60 px-2.5 py-0.5 rounded border border-cyan-500/30">
                 QoreChain Diana Testnet (Chain ID: 9800)
               </span>
-              <span className="text-slate-500">•</span>
+              <span className="text-slate-500">???</span>
               <span className="text-slate-400 font-semibold uppercase tracking-wider">Developer Tooling:</span>
               <a
                 href="https://build.qorechain.io/kits"
@@ -430,7 +430,7 @@ export const ContractsPage: React.FC = () => {
                         </p>
                         <div className="pl-3.5 flex flex-wrap items-center gap-2 text-[10px] font-mono text-slate-500">
                           <span>Block #{contract.blockNumber.toLocaleString()}</span>
-                          <span>•</span>
+                          <span>???</span>
                           <a
                             href={`${QORECHAIN_DASHBOARD_URL}/tx/${contract.txHash}`}
                             target="_blank"
@@ -442,7 +442,7 @@ export const ContractsPage: React.FC = () => {
                           </a>
                           {contract.additionalTxHash && (
                             <>
-                              <span>•</span>
+                              <span>???</span>
                               <a
                                 href={`${QORECHAIN_DASHBOARD_URL}/tx/${contract.additionalTxHash}`}
                                 target="_blank"
@@ -588,7 +588,7 @@ export const ContractsPage: React.FC = () => {
                     onClick={() => setSelectedContract(null)}
                     className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
                   >
-                    ✕
+                    ???
                   </button>
                 </div>
 
@@ -634,69 +634,116 @@ export const ContractsPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
               <div>
                 <div className="text-xs font-mono font-bold text-emerald-400">
-                  Additive QoreChain Diana Precompile Extensions (ERC-3643 · ONCHAINID v3 · Cross-VM)
+                  Live Deployed QoreChain Diana Precompile Extensions (Chain ID: 9800)
                 </div>
                 <h2 className="text-lg font-display font-bold text-white mt-0.5">
-                  TrexPqcIdentityModule · PqcERC7913Verifier · TrexCrossVmBridgeModule
+                  TrexPqcIdentityModule ?? PqcERC7913Verifier ?? TrexCrossVmBridgeModule
                 </h2>
               </div>
-              <span className="text-xs font-mono text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded self-start sm:self-center">
-                Compiled · Hardhat Audited · npm run deploy:qorechain-all
+              <span className="text-xs font-mono text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded self-start sm:self-center">
+                3 / 3 LIVE ON-CHAIN ?? 0x0901 CROSS-VM SYNC CONFIRMED
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 space-y-2">
                 <div className="flex items-center justify-between font-mono">
                   <span className="text-white font-bold">TrexPqcIdentityModule</span>
-                  <span className="text-[10px] text-cyan-300">ERC-3643</span>
+                  <span className="text-[10px] text-cyan-300">Block #10,680,152</span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   Plug-and-play <code className="text-cyan-300">ModularCompliance</code> extension enforcing fail-closed ML-DSA-87 proof-of-possession (<code className="text-emerald-300">0x0A02</code>), ERC-735 claim checks (<code className="text-emerald-300">0x0A01</code>), and ERC-7930 envelope anchoring.
                 </p>
+                <div className="pt-1 border-t border-white/10 font-mono text-[11px] space-y-1">
+                  <div className="text-cyan-300 truncate select-all">0x62600c1C206C089a68D53c65eE19A3f4A98e26a2</div>
+                  <a
+                    href={`${QORECHAIN_DASHBOARD_URL}/tx/0xc9e9e475ad65ef40c2cff03fc10e562ebd663eda63bc40522e99f01c7488fbfa`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-emerald-400 hover:underline inline-flex items-center gap-1 text-[10px]"
+                  >
+                    <span>Deploy Tx (0xc9e9e475...)</span>
+                    <ArrowUpRight className="w-2.5 h-2.5" />
+                  </a>
+                </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-black/50 border border-cyan-500/25 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-black/50 border border-cyan-500/25 space-y-2">
                 <div className="flex items-center justify-between font-mono">
                   <span className="text-white font-bold">PqcERC7913Verifier</span>
-                  <span className="text-[10px] text-emerald-300">ONCHAINID v3</span>
+                  <span className="text-[10px] text-emerald-300">Block #10,680,154</span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   Stateless <code className="text-cyan-300">IERC7913SignatureVerifier</code> returning <code className="text-emerald-300">0x024ad318</code> / <code className="text-slate-300">0xffffffff</code> via <code className="text-cyan-300">0x0A01</code> so OpenZeppelin <code className="text-cyan-300">AccountERC7579</code> smart accounts natively authenticate ML-DSA-87.
                 </p>
+                <div className="pt-1 border-t border-white/10 font-mono text-[11px] space-y-1">
+                  <div className="text-cyan-300 truncate select-all">0xFcd34140F26AF7bCb8935DdeF90F1936b36A1FAe</div>
+                  <a
+                    href={`${QORECHAIN_DASHBOARD_URL}/tx/0xee4c20364dc6978faee1e0f4dc75292e9cd81deb1bf08312eb73d8c125f59041`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-emerald-400 hover:underline inline-flex items-center gap-1 text-[10px]"
+                  >
+                    <span>Deploy Tx (0xee4c2036...)</span>
+                    <ArrowUpRight className="w-2.5 h-2.5" />
+                  </a>
+                </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-black/50 border border-emerald-500/25 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-black/50 border border-emerald-500/25 space-y-2">
                 <div className="flex items-center justify-between font-mono">
                   <span className="text-white font-bold">TrexCrossVmBridgeModule</span>
-                  <span className="text-[10px] text-emerald-300">0x0901 Cross-VM</span>
+                  <span className="text-[10px] text-emerald-300">Block #10,680,156</span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   Atomic EVM-to-Native Cosmos bridge invoking <code className="text-cyan-300">0x0901 executeCrossVMCall</code> to record sanitized ERC-7930 compliance receipts on <code className="text-emerald-300">qday-receipts-w3</code> (<code className="text-slate-300">qor1xjayq5...gltw8</code>).
                 </p>
+                <div className="pt-1 border-t border-white/10 font-mono text-[11px] space-y-1">
+                  <div className="text-cyan-300 truncate select-all">0x72E4B9507cBd76b9177d61c8a14bd127201EAE0C</div>
+                  <div className="flex items-center gap-3 text-[10px]">
+                    <a
+                      href={`${QORECHAIN_DASHBOARD_URL}/tx/0x6a59732ede95facde99d0b858a5d32063e6ffd2c9b8f36a956742304875e452c`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-cyan-300 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Deploy Tx</span>
+                      <ArrowUpRight className="w-2.5 h-2.5" />
+                    </a>
+                    <a
+                      href={`${QORECHAIN_DASHBOARD_URL}/tx/0x369d3276f63d0114433078146402cc936e4f8ef0300d12c5b2668824fb6c8b87`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-emerald-400 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>0x0901 Sync Tx (#10,680,158)</span>
+                      <ArrowUpRight className="w-2.5 h-2.5" />
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
               <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
-                <div className="text-[10px] text-slate-400">0x0A01 · pqcVerify</div>
+                <div className="text-[10px] text-slate-400">0x0A01 ?? pqcVerify</div>
                 <div className="text-cyan-300 truncate">0x0000...00000A01</div>
                 <div className="text-[11px] text-emerald-400">ERC-7913 & Claim Proofs</div>
               </div>
               <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
-                <div className="text-[10px] text-slate-400">0x0A02 · pqcKeyStatus</div>
+                <div className="text-[10px] text-slate-400">0x0A02 ?? pqcKeyStatus</div>
                 <div className="text-cyan-300 truncate">0x0000...00000A02</div>
                 <div className="text-[11px] text-emerald-400">ML-DSA-87 + PoP Gate</div>
               </div>
               <div className="p-3 rounded-xl bg-black/50 border border-emerald-500/20 space-y-1">
-                <div className="text-[10px] text-slate-400">0x0901 · executeCrossVMCall</div>
+                <div className="text-[10px] text-slate-400">0x0901 ?? executeCrossVMCall</div>
                 <div className="text-emerald-300 truncate">0x0000...00000901</div>
-                <div className="text-[11px] text-emerald-400">Atomic EVM → Native Sync</div>
+                <div className="text-[11px] text-emerald-400">Atomic EVM ??? Native Sync</div>
               </div>
               <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
-                <div className="text-[10px] text-slate-400">0x0C01 · rlConsensusParams</div>
+                <div className="text-[10px] text-slate-400">0x0C01 ?? rlConsensusParams</div>
                 <div className="text-cyan-300 truncate">0x0000...00000C01</div>
-                <div className="text-[11px] text-slate-300">5,000ms Block · 4 Validators</div>
+                <div className="text-[11px] text-slate-300">5,000ms Block ?? 4 Validators</div>
               </div>
             </div>
           </div>

@@ -299,7 +299,7 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-cyan-900/40 pb-4">
           <div>
             <div className="text-xs font-mono font-bold text-cyan-400">
-              QoreChain Diana Testnet · Chain ID: {QORECHAIN_CHAIN_ID}
+              QoreChain Diana Testnet ?? Chain ID: {QORECHAIN_CHAIN_ID}
             </div>
             <h2 className="text-lg font-bold text-white font-mono mt-0.5 flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-cyan-400" />
@@ -531,7 +531,7 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
           <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
             <span className="text-xs font-mono font-bold text-purple-300 flex items-center gap-1.5">
               <KeyRound className="w-4 h-4 text-purple-400" />
-              <span>{qoreSeal.package} · Selective Disclosure</span>
+              <span>{qoreSeal.package} ?? Selective Disclosure</span>
             </span>
             <span className="text-[11px] font-mono font-bold text-emerald-400">{qoreSeal.status}</span>
           </div>
@@ -565,7 +565,7 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
           </div>
           <div className="p-2.5 rounded-lg bg-black/60 border border-white/10 text-[11px] font-mono space-y-1">
             <div className="text-slate-400">
-              HKDF: {qoreSeal.hkdfContext} · Topics [{qoreSeal.authorizedTopics.join(', ')}]
+              HKDF: {qoreSeal.hkdfContext} ?? Topics [{qoreSeal.authorizedTopics.join(', ')}]
             </div>
             <div className="text-purple-200 break-all">KEM Digest: {qoreSeal.encapsulatedKeyDigest}</div>
           </div>
@@ -586,11 +586,11 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
                 <div className="flex items-center justify-between border-b border-cyan-900/40 pb-3">
                   <span className="text-xs font-mono font-bold text-cyan-300 flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-cyan-400" />
-                    <span>{QORECHAIN_RDK_ROLLUP_PRESET.package} · {QORECHAIN_RDK_ROLLUP_PRESET.presetName}</span>
+                    <span>{QORECHAIN_RDK_ROLLUP_PRESET.package} ?? {QORECHAIN_RDK_ROLLUP_PRESET.presetName}</span>
                   </span>
                   <span className="text-[11px] font-mono text-cyan-400 tabular-nums">
                     {consensusParams?.responded
-                      ? `0x0C01: ${consensusParams.validatorSetSize} validators · Epoch ${consensusParams.epoch}`
+                      ? `0x0C01: ${consensusParams.validatorSetSize} validators ?? Epoch ${consensusParams.epoch}`
                       : `${QORECHAIN_RDK_ROLLUP_PRESET.blockTimeMs}ms finality`}
                   </span>
                 </div>
@@ -598,7 +598,7 @@ export const QoreChainSovereignPanel: React.FC<QoreChainSovereignPanelProps> = (
                   <div className="text-slate-300 flex flex-wrap items-center justify-between gap-2">
                     <span>{preFlight.package}: {preFlight.bech32Holder.slice(0, 14)}...{preFlight.bech32Holder.slice(-6)}</span>
                     <span className="text-emerald-400 font-bold">
-                      {preFlight.pqcKeyBoundInMockChain ? 'PRE-FLIGHT BOUND' : 'UNBOUND'} · {QORECHAIN_PRECOMPILES.pqcVerify.slice(-6)}/{QORECHAIN_PRECOMPILES.pqcKeyStatus.slice(-6)}
+                      {preFlight.pqcKeyBoundInMockChain ? 'PRE-FLIGHT BOUND' : 'UNBOUND'} ?? {QORECHAIN_PRECOMPILES.pqcVerify.slice(-6)}/{QORECHAIN_PRECOMPILES.pqcKeyStatus.slice(-6)}
                     </span>
                   </div>
                   <div className="text-slate-400">Data Availability: {QORECHAIN_RDK_ROLLUP_PRESET.daAvailability}</div>

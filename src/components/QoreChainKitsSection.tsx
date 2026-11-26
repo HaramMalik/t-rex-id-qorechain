@@ -272,7 +272,7 @@ export const QoreChainKitsSection: React.FC = () => {
               <span className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">
                 {activeKit.category}
               </span>
-              <span className="text-slate-600">•</span>
+              <span className="text-slate-600">???</span>
               <code className="text-xs font-mono text-cyan-300 font-bold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/30">
                 {activeKit.badge}
               </code>
@@ -350,19 +350,19 @@ export const QoreChainKitsSection: React.FC = () => {
           return (
             <div className="p-4 rounded-xl bg-black/50 border border-purple-500/30 space-y-2 text-xs font-mono">
               <div className="flex items-center justify-between">
-                <span className="text-purple-300 font-bold">{seal.package} · Selective Disclosure</span>
+                <span className="text-purple-300 font-bold">{seal.package} ?? Selective Disclosure</span>
                 <span className="text-emerald-400 font-bold">{seal.status}</span>
               </div>
-              <div className="text-slate-300">{seal.kemAlgorithm} · {seal.symmetricCipher}</div>
+              <div className="text-slate-300">{seal.kemAlgorithm} ?? {seal.symmetricCipher}</div>
               <div className="text-[11px] text-slate-400 tabular-nums">
-                Pubkey {seal.mlkemPubkeyBytes} B · Envelope {seal.sealedEnvelopeBytes} B · {seal.hkdfContext}
+                Pubkey {seal.mlkemPubkeyBytes} B ?? Envelope {seal.sealedEnvelopeBytes} B ?? {seal.hkdfContext}
               </div>
             </div>
           );
         })()}
         <div className="p-4 rounded-xl bg-black/50 border border-cyan-500/30 space-y-2 text-xs font-mono">
           <div className="flex items-center justify-between">
-            <span className="text-cyan-300 font-bold">{QORECHAIN_RDK_ROLLUP_PRESET.package} · {QORECHAIN_RDK_ROLLUP_PRESET.presetName}</span>
+            <span className="text-cyan-300 font-bold">{QORECHAIN_RDK_ROLLUP_PRESET.package} ?? {QORECHAIN_RDK_ROLLUP_PRESET.presetName}</span>
             <span className="text-cyan-400 font-bold">{QORECHAIN_RDK_ROLLUP_PRESET.blockTimeMs}ms finality</span>
           </div>
           <div className="text-slate-300">{QORECHAIN_RDK_ROLLUP_PRESET.settlementLayer}</div>

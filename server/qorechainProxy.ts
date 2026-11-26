@@ -6,6 +6,7 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const QORECHAIN_RPC_URL = process.env.QORECHAIN_RPC_URL || 'https://evm-testnet.qore.host';
+const QORECHAIN_REST_URL = process.env.QORECHAIN_REST_URL || 'https://api-testnet.qore.host';
 const GAS_BROADCASTER = '0x3C02596841f8793ad45Ca8c8068820d620A763dB';
 
 app.use(express.json());
@@ -30,6 +31,34 @@ app.post('/api/qorechain/rpc', async (req, res) => {
       id: req.body?.id || 1,
       error: { code: -32000, message: err?.message || 'Upstream RPC unavailable' }
     });
+  }
+});
+
+// Live Diana PQC Account & EVM Window Pre-Flight Proxy
+app.get('/api/qorechain/pqc/preflight/:address', async (req, res) => {
+  const address = String(req.params.address || '').trim();
+  if (!/^qor1[0-9a-z]{38,60}$/.test(address)) {
+    return res.status(400).json({ error: 'Invalid QoreChain Bech32 address (expected qor1...).' });
+  }
+  try {
+    const [accountRes, windowRes] = await Promise.all([
+      fetch(`${QORECHAIN_REST_URL}/qorechain/pqc/v1/account/${address}`),
+      fetch(`${QORECHAIN_REST_URL}/qorechain/pqc/v1/evm_window/${address}`)
+    ]);
+    if (!accountRes.ok || !windowRes.ok) {
+      return res.status(502).json({
+        error: `Upstream Diana REST returned HTTP ${accountRes.status}/${windowRes.status}`
+      });
+    }
+    const [account, evmWindow] = await Promise.all([accountRes.json(), windowRes.json()]);
+    return res.status(200).json({
+      address,
+      restBase: QORECHAIN_REST_URL,
+      account,
+      evmWindow
+    });
+  } catch (err: any) {
+    return res.status(502).json({ error: err?.message || 'Upstream Diana REST unavailable' });
   }
 });
 

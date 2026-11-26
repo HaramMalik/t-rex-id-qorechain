@@ -35,7 +35,7 @@ During Stage 1 static review and precompile ABI verification against QoreChain's
    *Affected Components:* `TrexPqcIdentityModule.sol`, `TrexCrossVmBridgeModule.sol`.
 
 7. **[LOW] Unauthorized ERC-7930 Cross-VM Envelope Anchoring & Solidity EIP-55 Literal Syntax**  
-   *Risk:* Permitting third parties to overwrite another institution's Cosmos `qor1...` ↔ EVM `0x...` identity mapping violates ONCHAINID v3 self-sovereignty. Additionally, uppercase `0x...0A01` 40-char literals trigger solc EIP-55 checksum compiler errors.  
+   *Risk:* Permitting third parties to overwrite another institution's Cosmos `qor1...` ??? EVM `0x...` identity mapping violates ONCHAINID v3 self-sovereignty. Additionally, uppercase `0x...0A01` 40-char literals trigger solc EIP-55 checksum compiler errors.  
    *Affected Components:* `TrexPqcIdentityModule.sol`, `PqcERC7913Verifier.sol`, `TrexCrossVmBridgeModule.sol`.
 
 ---

@@ -10,6 +10,7 @@
     "verify:compliance": "node scripts/testComplianceIntegration.mjs",
     "compile:contracts": "hardhat compile",
     "test": "hardhat test",
+    "preflight:diana": "node scripts/deployQorechainExtensions.mjs --preflight-only",
     "deploy:pqc-module": "hardhat compile && node scripts/deployTrexPqcModule.mjs",
     "deploy:qorechain-all": "hardhat compile && node scripts/deployQorechainExtensions.mjs",
     "deploy:qorechain-all:sync": "hardhat compile && node scripts/deployQorechainExtensions.mjs --dispatch-sync",

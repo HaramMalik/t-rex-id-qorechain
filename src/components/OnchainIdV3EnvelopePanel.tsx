@@ -12,7 +12,8 @@ import {
   Cpu,
   ArrowRightLeft,
   ExternalLink,
-  Send
+  Send,
+  AlertTriangle
 } from 'lucide-react';
 import {
   ONCHAINID_V3_KEY_PURPOSES,
@@ -33,6 +34,10 @@ import {
   type LivePqcPrecompileKeyStatus,
   type CrossVmDispatchResult
 } from '../services/qorechainPqcService';
+import {
+  checkDianaPqcReadiness,
+  type DianaPreflightReport
+} from '../services/qorechainDianaHelper';
 
 interface OnchainIdV3EnvelopePanelProps {
   targetAddress: string;
@@ -49,6 +54,9 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [pqcKeyStatus, setPqcKeyStatus] = useState<LivePqcPrecompileKeyStatus | null>(null);
   const [isLoadingPqc, setIsLoadingPqc] = useState<boolean>(false);
+  const [preflightReport, setPreflightReport] = useState<DianaPreflightReport | null>(null);
+  const [isLoadingPreflight, setIsLoadingPreflight] = useState<boolean>(false);
+  const [preflightError, setPreflightError] = useState<string | null>(null);
 
   const [bridgeAddress, setBridgeAddress] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -85,9 +93,26 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
     }
   }, [normalizedAddress]);
 
+  const refreshDianaPreflight = useCallback(async () => {
+    setIsLoadingPreflight(true);
+    setPreflightError(null);
+    try {
+      const report = await checkDianaPqcReadiness(envelope.qorBech32Address);
+      setPreflightReport(report);
+    } catch (err: any) {
+      setPreflightError(err?.message || 'Unable to reach Diana REST pre-flight endpoint.');
+    } finally {
+      setIsLoadingPreflight(false);
+    }
+  }, [envelope.qorBech32Address]);
+
   useEffect(() => {
     refreshPrecompileStatus();
   }, [refreshPrecompileStatus]);
+
+  useEffect(() => {
+    refreshDianaPreflight();
+  }, [refreshDianaPreflight]);
 
   const activeTypeSpec = useMemo(() => {
     return (
@@ -169,7 +194,7 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-400">
               <Layers className="w-4 h-4 shrink-0" />
-              <span>ONCHAINID v3 · ERC-7579 Modular Account · ERC-7930 Envelope</span>
+              <span>ONCHAINID v3 ?? ERC-7579 Modular Account ?? ERC-7930 Envelope</span>
             </div>
             <p className="text-xs text-slate-400">
               Binds EVM (`0x...`) and QoreChain Cosmos Bech32 (`qor1...`) signers into one unified identity keyspace across 6 key purposes and 8 institutional entity types.
@@ -218,7 +243,7 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
           </div>
           <div className="text-xs text-slate-300 bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span>
-              <strong className="text-white">{activeTypeSpec.label}</strong> — {activeTypeSpec.jurisdictionalRole}
+              <strong className="text-white">{activeTypeSpec.label}</strong> ??? {activeTypeSpec.jurisdictionalRole}
             </span>
             <span className="text-[11px] font-mono text-cyan-300 shrink-0">
               Active Purposes: [{activeTypeSpec.defaultPurposes.join(', ')}]
@@ -298,11 +323,11 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
             <Cpu className="w-4 h-4 text-cyan-400" />
-            <span>Live Diana Precompiles · ERC-7913 PQC Verifier · QoreSeal</span>
+            <span>Live Diana Precompiles ?? ERC-7913 PQC Verifier ?? QoreSeal</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-mono text-slate-400">
-              {QORECHAIN_PRECOMPILES.pqcKeyStatus.slice(0, 10)}...{QORECHAIN_PRECOMPILES.pqcKeyStatus.slice(-4)} · {QORECHAIN_PRECOMPILES.pqcVerify.slice(-4)}
+              {QORECHAIN_PRECOMPILES.pqcKeyStatus.slice(0, 10)}...{QORECHAIN_PRECOMPILES.pqcKeyStatus.slice(-4)} ?? {QORECHAIN_PRECOMPILES.pqcVerify.slice(-4)}
             </span>
             <button
               type="button"
@@ -333,11 +358,11 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
             <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums">
               <div>
                 <div className="text-[10px] text-slate-500">Algorithm</div>
-                <div className="text-slate-200 font-semibold">{pqcKeyStatus?.algorithmLabel || '—'}</div>
+                <div className="text-slate-200 font-semibold">{pqcKeyStatus?.algorithmLabel || '???'}</div>
               </div>
               <div>
                 <div className="text-[10px] text-slate-500">Pubkey Size</div>
-                <div className="text-cyan-300 font-semibold">{pqcKeyStatus ? `${pqcKeyStatus.pubkeyBytes} B` : '—'}</div>
+                <div className="text-cyan-300 font-semibold">{pqcKeyStatus ? `${pqcKeyStatus.pubkeyBytes} B` : '???'}</div>
               </div>
             </div>
           </div>
@@ -390,7 +415,7 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400">
               <ArrowRightLeft className="w-4 h-4 shrink-0" />
-              <span>Cross-VM Identity Sync · Precompile 0x0901 (EVM → Native CosmWasm)</span>
+              <span>Cross-VM Identity Sync ?? Precompile 0x0901 (EVM ??? Native CosmWasm)</span>
             </div>
             <p className="text-xs text-slate-400">
               Dispatches one atomic ERC-7930 compliance attestation receipt from QoreChain EVM to Diana&apos;s governance-allowlisted CosmWasm contract via <code className="text-cyan-300">TrexCrossVmBridgeModule</code>.
@@ -399,6 +424,109 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
           <span className="text-[11px] font-mono text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 px-2.5 py-1 rounded shrink-0 whitespace-nowrap">
             Target VM: 1 (Native)
           </span>
+        </div>
+
+        {/* Live Diana REST Pre-Flight Gate (/qorechain/pqc/v1/account & /evm_window) */}
+        <div className="p-3.5 rounded-xl bg-black/50 border border-white/10 space-y-2 text-xs font-mono">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-300 font-bold">Diana REST Pre-Flight Gate</span>
+              <span className="text-[10px] text-slate-400 truncate max-w-[240px]" title={envelope.qorBech32Address}>
+                {envelope.qorBech32Address}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={
+                  preflightReport?.readyToDeploy
+                    ? 'text-emerald-400 font-bold'
+                    : preflightReport
+                    ? 'text-amber-300 font-bold'
+                    : 'text-slate-400'
+                }
+              >
+                {isLoadingPreflight
+                  ? 'QUERYING REST...'
+                  : preflightReport?.readyToDeploy
+                  ? 'WINDOW LIVE ?? READY'
+                  : preflightReport
+                  ? 'EVM WINDOW CLOSED'
+                  : 'NOT CHECKED'}
+              </span>
+              <button
+                type="button"
+                onClick={refreshDianaPreflight}
+                disabled={isLoadingPreflight}
+                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-white/15 text-[11px] text-cyan-300 hover:text-white flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3 h-3 ${isLoadingPreflight ? 'animate-spin' : ''}`} />
+                <span>Check Window</span>
+              </button>
+            </div>
+          </div>
+
+          {preflightError && (
+            <div className="text-[11px] text-rose-300">{preflightError}</div>
+          )}
+
+          {preflightReport && preflightReport.isLowWindow && (
+            <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-200 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                <strong>Warning:</strong> EVM window is running low ({preflightReport.remainingBlocks} blocks, {preflightReport.remainingTxs} txs remaining). Open a new window soon with <code className="text-white">MsgOpenEVMWindow</code>.
+              </span>
+            </div>
+          )}
+
+          {preflightReport && !preflightError && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 tabular-nums text-[11px]">
+              <div>
+                <div className="text-[10px] text-slate-500">ML-DSA-87 Key</div>
+                <div className={preflightReport.hasUsableMlDsa87Key ? 'text-emerald-400 font-semibold' : 'text-amber-300 font-semibold'}>
+                  {preflightReport.accountFound
+                    ? `${preflightReport.algorithmName} (${preflightReport.possessionProven ? 'PoP OK' : 'Unproven'})`
+                    : 'Not Registered'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500">evm_window.live</div>
+                <div className={preflightReport.windowLive ? 'text-emerald-400 font-semibold' : 'text-rose-300 font-semibold'}>
+                  {String(preflightReport.windowLive)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500">Expiry Block</div>
+                <div className="text-slate-200 font-semibold">
+                  {Number(preflightReport.expiryHeight) > 0
+                    ? `#${Number(preflightReport.expiryHeight).toLocaleString()}`
+                    : '???'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500">Remaining Txs</div>
+                <div className="text-cyan-300 font-semibold">
+                  {preflightReport.windowFound
+                    ? `${preflightReport.remainingTxs} / ${preflightReport.maxTxs}`
+                    : '0 / 0'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {preflightReport && preflightReport.blockers.length > 0 && (
+            <div className="pt-2 border-t border-white/10 text-[11px] text-amber-200/90 space-y-1">
+              <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                <span>QoreChain v3.2.0 PQC / EVM Window Notice</span>
+              </div>
+              <p className="text-slate-300 font-sans leading-relaxed text-[11px]">
+                QoreChain Diana requires this connected account to register an ML-DSA-87 key and open a bounded EVM window (<code className="text-cyan-300">MsgOpenEVMWindow</code>) before broadcasting EVM transactions or interacting with contracts.
+              </p>
+              {preflightReport.blockers.map((b, i) => (
+                <div key={i} className="font-mono text-amber-300">??? {b}</div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
@@ -421,7 +549,7 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
 
           <div className="space-y-1.5">
             <div className="text-[11px] text-slate-300 font-semibold">
-              Allowlisted Native CosmWasm Target (Proposal 40 · qday-receipts-w3)
+              Allowlisted Native CosmWasm Target (Proposal 40 ?? qday-receipts-w3)
             </div>
             <div className="px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-emerald-300 truncate select-all" title={QORECHAIN_NATIVE_RECEIPTS_CONTRACT}>
               {QORECHAIN_NATIVE_RECEIPTS_CONTRACT}
@@ -469,7 +597,7 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
           <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-1.5 text-xs font-mono">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-emerald-300 font-bold">
-                Cross-VM 0x0901 Receipt Anchored · Block #{bridgeResult.blockNumber.toLocaleString()}
+                Cross-VM 0x0901 Receipt Anchored ?? Block #{bridgeResult.blockNumber.toLocaleString()}
               </span>
               <a
                 href={bridgeResult.explorerUrl}
@@ -491,7 +619,7 @@ export const OnchainIdV3EnvelopePanel: React.FC<OnchainIdV3EnvelopePanelProps> =
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
             <Key className="w-4 h-4 text-cyan-400" />
-            <span>ONCHAINID v3 Key Purposes (Purposes 1 – 6)</span>
+            <span>ONCHAINID v3 Key Purposes (Purposes 1 ??? 6)</span>
           </div>
           <span className="text-[11px] font-mono text-cyan-300">ERC-734 + ERC-7579 Matrix</span>
         </div>

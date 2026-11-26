@@ -1,4 +1,4 @@
-# AI_USAGE.md — T-REX ID on QoreChain (Public Integration Repository)
+# AI_USAGE.md ??? T-REX ID on QoreChain (Public Integration Repository)
 
 ## Overview
 This document satisfies the **AI-Native** bounty requirements for **Build Before Q-Day (QoreChain Developer Fest)** by detailing how Artificial Intelligence tooling was used across the design, smart contract synthesis, and verification of **T-REX ID's QoreChain Diana integration**.

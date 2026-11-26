@@ -54,7 +54,7 @@ async function main() {
   };
 
   function recordTest(suite, testName, passed, details) {
-    const symbol = passed ? "✓ PASS" : "✗ FAIL";
+    const symbol = passed ? "??? PASS" : "??? FAIL";
     console.log(`[${symbol}] [${suite}] ${testName}`);
     if (details) console.log(`       Details: ${JSON.stringify(details)}`);
     results.tests.push({ suite, testName, passed, details });

@@ -95,9 +95,26 @@ export const TREX_CROSS_VM_BRIDGE_ABI = [
 const envAny = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
 
 export const QORECHAIN_EXTENSIONS_DEFAULTS = {
-  trexPqcIdentityModule: (envAny.VITE_TREX_PQC_MODULE_ADDRESS as string) || '',
-  pqcErc7913Verifier: (envAny.VITE_PQC_ERC7913_VERIFIER_ADDRESS as string) || '',
-  trexCrossVmBridgeModule: (envAny.VITE_TREX_CROSSVM_BRIDGE_ADDRESS as string) || ''
+  trexPqcIdentityModule:
+    (envAny.VITE_TREX_PQC_MODULE_ADDRESS as string) || '0x62600c1C206C089a68D53c65eE19A3f4A98e26a2',
+  pqcErc7913Verifier:
+    (envAny.VITE_PQC_ERC7913_VERIFIER_ADDRESS as string) || '0xFcd34140F26AF7bCb8935DdeF90F1936b36A1FAe',
+  trexCrossVmBridgeModule:
+    (envAny.VITE_TREX_CROSSVM_BRIDGE_ADDRESS as string) || '0x72E4B9507cBd76b9177d61c8a14bd127201EAE0C'
+} as const;
+
+export const QORECHAIN_EXTENSIONS_TX_HASHES = {
+  TrexPqcIdentityModule: '0xc9e9e475ad65ef40c2cff03fc10e562ebd663eda63bc40522e99f01c7488fbfa',
+  PqcERC7913Verifier: '0xee4c20364dc6978faee1e0f4dc75292e9cd81deb1bf08312eb73d8c125f59041',
+  TrexCrossVmBridgeModule: '0x6a59732ede95facde99d0b858a5d32063e6ffd2c9b8f36a956742304875e452c',
+  CrossVmIdentitySync0x0901: '0x369d3276f63d0114433078146402cc936e4f8ef0300d12c5b2668824fb6c8b87'
+} as const;
+
+export const QORECHAIN_EXTENSIONS_BLOCKS = {
+  TrexPqcIdentityModule: 10680152,
+  PqcERC7913Verifier: 10680154,
+  TrexCrossVmBridgeModule: 10680156,
+  CrossVmIdentitySync0x0901: 10680158
 } as const;
 
 export function buildCrossVmReceiptPreview(
